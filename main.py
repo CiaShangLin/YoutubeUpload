@@ -1,14 +1,16 @@
 import os
 import random
 import re
+
 import time
 
 import googleapiclient.discovery
 import googleapiclient.errors
 import httplib2
 from PyQt5 import QtCore, QtWidgets
-from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaFileUpload
+from apiclient.discovery import build
+from apiclient.errors import HttpError
+from apiclient.http import MediaFileUpload
 from oauth2client import client, tools, file
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
@@ -243,7 +245,7 @@ class Ui_Dialog(object):
         if credentials is None or credentials.invalid:
             credentials = run_flow(flow, storage, args)
 
-        return googleapiclient.build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
+        return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
                      http=credentials.authorize(httplib2.Http()))
 
     def initialize_upload(self, youtube, options):
