@@ -9,6 +9,7 @@ import googleapiclient.errors
 import httplib2
 from PyQt5 import QtCore, QtWidgets
 from googleapiclient.http import MediaFileUpload
+from googleapiclient.errors import HttpError
 # from apiclient.discovery import build
 # from apiclient.errors import HttpError
 # from apiclient.http import MediaFileUpload
@@ -290,7 +291,7 @@ class Ui_Dialog(object):
                         return response['id']
                     else:
                         exit("The upload failed with an unexpected response: %s" % response)
-            except googleapiclient.HttpError as e:
+            except HttpError as e:
                 if e.resp.status in RETRIABLE_STATUS_CODES:
                     error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
                                                                          e.content)
@@ -463,9 +464,10 @@ class Ui_Dialog(object):
             self.add_video_to_playlist(ssl, video_id, self.get_add_playlist())
             self.add_video_localizations(ssl, video_id, self.get_multi_language())
             print("上傳完成")
-
-        except googleapiclient.HttpError as e:
+        except HttpError as e:
             print("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
+        except Exception as e:
+            print("An error occurred: %s" % str(e))
 
 
 if __name__ == "__main__":
