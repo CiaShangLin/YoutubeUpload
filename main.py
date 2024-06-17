@@ -8,9 +8,10 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import httplib2
 from PyQt5 import QtCore, QtWidgets
-from apiclient.discovery import build
-from apiclient.errors import HttpError
-from apiclient.http import MediaFileUpload
+from googleapiclient.http import MediaFileUpload
+# from apiclient.discovery import build
+# from apiclient.errors import HttpError
+# from apiclient.http import MediaFileUpload
 from oauth2client import client, tools, file
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
@@ -234,19 +235,18 @@ class Ui_Dialog(object):
             credentials = tools.run_flow(flow, store)
         return googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
 
-    def get_authenticated_service(self, args):
-        flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE,
-                                       scope=YOUTUBE_UPLOAD_SCOPE,
-                                       message=MISSING_CLIENT_SECRETS_MESSAGE)
-
-        storage = Storage("%s-oauth2.json" % sys.argv[0])
-        credentials = storage.get()
-
+    def get_authenticated_service(self):
+        CLIENT_SECRET = 'client_secret.json'
+        SCOPE = 'https://www.googleapis.com/auth/youtube.upload'
+        STORAGE = Storage("%s-oauth2.json" % sys.argv[0])
+        credentials = STORAGE.get()
         if credentials is None or credentials.invalid:
-            credentials = run_flow(flow, storage, args)
-
-        return build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION,
-                     http=credentials.authorize(httplib2.Http()))
+            flow = flow_from_clientsecrets(CLIENT_SECRET, scope=SCOPE)
+            http = httplib2.Http()
+            credentials = run_flow(flow, STORAGE, http=http)
+        http = credentials.authorize(httplib2.Http())
+        service = googleapiclient.discovery.build('youtube', 'v3', http=http)
+        return service
 
     def initialize_upload(self, youtube, options):
         tags = None
@@ -290,7 +290,7 @@ class Ui_Dialog(object):
                         return response['id']
                     else:
                         exit("The upload failed with an unexpected response: %s" % response)
-            except HttpError as e:
+            except googleapiclient.HttpError as e:
                 if e.resp.status in RETRIABLE_STATUS_CODES:
                     error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status,
                                                                          e.content)
@@ -450,7 +450,7 @@ class Ui_Dialog(object):
         if not os.path.exists(args.file):
             exit("Please specify a valid file using the --file= parameter.")
 
-        youtube = self.get_authenticated_service(args)
+        youtube = self.get_authenticated_service()
 
         try:
             video_id = self.initialize_upload(youtube, args)
@@ -464,7 +464,7 @@ class Ui_Dialog(object):
             self.add_video_localizations(ssl, video_id, self.get_multi_language())
             print("上傳完成")
 
-        except HttpError as e:
+        except googleapiclient.HttpError as e:
             print("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
 
 
