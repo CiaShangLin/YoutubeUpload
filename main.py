@@ -7,7 +7,7 @@ import time
 import googleapiclient.discovery
 import googleapiclient.errors
 import httplib2
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
 # from apiclient.discovery import build
@@ -188,7 +188,8 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        Dialog.setWindowTitle(_translate("Dialog", "YoutubeUpload"))
+        Dialog.setWindowIcon(QtGui.QIcon('icon.jpg'))
         self.tvFilePath.setText(_translate("Dialog", "File Path"))
         self.btOpenVideo.setText(_translate("Dialog", "選擇檔案"))
         self.btOpenImage.setText(_translate("Dialog", "選擇縮圖"))
