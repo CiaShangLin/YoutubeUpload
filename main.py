@@ -180,8 +180,8 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.btOpenVideo.clicked.connect(self.openVideoFile)
-        self.btOpenImage.clicked.connect(self.openImageFile)
+        self.btOpenVideo.clicked.connect(self.open_video_file())
+        self.btOpenImage.clicked.connect(self.open_image_file)
         self.btUpload.clicked.connect(self.upload)
 
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -217,12 +217,14 @@ class Ui_Dialog(object):
         self.ckbPVT.setText(_translate("Dialog", "PVT"))
         self.btUpload.setText(_translate("Dialog", "上傳"))
 
-    def openVideoFile(self):
+    # 選擇影片路徑
+    def open_video_file(self):
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName()  # 選擇檔案對話視窗
         if filePath:
             self.tvFilePath.setText(filePath)
 
-    def openImageFile(self):
+    # 選擇縮圖路徑
+    def open_image_file(self):
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName()  # 選擇檔案對話視窗
         if filePath:
             self.tvImagePath.setText(filePath)
@@ -365,7 +367,7 @@ class Ui_Dialog(object):
 
         print(f"添加多國字幕 Updated video '{video_id}' with localizations: {localizations}")
 
-    # Youtube Api 取得自己頻道的播放清單
+    # Youtube Api 取得自己頻道的播放清單,上傳的時候不會用到
     def list_playlists(self, youtube, channel_id):
         request = youtube.playlists().list(
             part="snippet,contentDetails",
