@@ -180,7 +180,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
-        self.btOpenVideo.clicked.connect(self.open_video_file())
+        self.btOpenVideo.clicked.connect(self.open_video_file)
         self.btOpenImage.clicked.connect(self.open_image_file)
         self.btUpload.clicked.connect(self.upload)
 
