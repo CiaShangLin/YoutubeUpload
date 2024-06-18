@@ -431,6 +431,15 @@ class Ui_Dialog(object):
             'zh-TW': {'title': zhTW_title, 'description': zhTW_description}
         }
 
+    def print_upload_args(self):
+        print(self.tvFilePath.text())
+        print(self.get_title())
+        print(self.tvImagePath.text())
+        print(self.get_description(self.get_title()))
+        print(category)
+        print(keyword)
+        print(VALID_PRIVACY_STATUSES[1])
+
     def upload(self):
         argparser.add_argument("--file", default=self.tvFilePath.text(), help="video name")
         argparser.add_argument("--title", default=self.get_title(), help="Video title")
@@ -441,14 +450,8 @@ class Ui_Dialog(object):
         argparser.add_argument("--keywords", help="Video keywords, comma separated", default=keyword)
         argparser.add_argument("--privacyStatus", choices=VALID_PRIVACY_STATUSES,
                                default=VALID_PRIVACY_STATUSES[1], help="Video privacy status.")
-        print(self.tvFilePath.text())
-        print(self.get_title())
-        print(self.tvImagePath.text())
-        print(self.get_description(self.get_title()))
-        print(category)
-        print(keyword)
-        print(VALID_PRIVACY_STATUSES[1])
 
+        self.print_upload_args()
         args = argparser.parse_args()
 
         if not os.path.exists(args.file):
