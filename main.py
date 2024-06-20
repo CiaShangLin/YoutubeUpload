@@ -118,6 +118,10 @@ class Ui_Dialog(object):
         self.textEditEp.setGeometry(QtCore.QRect(20, 430, 65, 30))
         self.textEditEp.setObjectName("textEdit_2")
 
+        self.textEditRr = QtWidgets.QTextEdit(Dialog)
+        self.textEditRr.setGeometry(QtCore.QRect(20, 470, 150, 30))
+        self.textEditRr.setObjectName("textEdit_3")
+
         self.verticalLayoutWidget = QtWidgets.QWidget(Dialog)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(20, 240, 301, 80))
         self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
@@ -392,7 +396,7 @@ class Ui_Dialog(object):
     def get_description(self, title):
         tags = '#startcraft2 #星海爭霸2 #gaming'
         rp = f'RP : '
-        description = f'{tags}\n{title}\n{rp}'
+        description = f'{tags}\n{title}\n{rp}{self.textEditRr.toPlainText()}'
         return description
 
     # 取得有添加的播放列表
