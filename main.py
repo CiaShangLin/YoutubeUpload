@@ -1,18 +1,13 @@
 import os
 import random
 import re
-
 import time
-
 import googleapiclient.discovery
 import googleapiclient.errors
 import httplib2
 from PyQt5 import QtCore, QtWidgets, QtGui
 from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
-# from apiclient.discovery import build
-# from apiclient.errors import HttpError
-# from apiclient.http import MediaFileUpload
 from oauth2client import client, tools, file
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
@@ -51,6 +46,7 @@ https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
 
 VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
 LOGIN_TOKEN_FILE = "login_token.json"
+UPLOAD_TOKEN_FILE = "upload_token.json"
 CHANNEL_ID = 'UC9RrMSH_OaUP2kIFqzPrBpw'
 
 category = "20"
@@ -244,14 +240,13 @@ class Ui_Dialog(object):
         return googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
 
     def get_authenticated_service(self):
-        CLIENT_SECRET = 'client_secret.json'
-        SCOPE = 'https://www.googleapis.com/auth/youtube.upload'
-        STORAGE = Storage("%s-oauth2.json" % sys.argv[0])
-        credentials = STORAGE.get()
+        credential_path = os.path.join("./", UPLOAD_TOKEN_FILE)
+        store = file.Storage(credential_path)
+        credentials = store.get()
         if credentials is None or credentials.invalid:
-            flow = flow_from_clientsecrets(CLIENT_SECRET, scope=SCOPE)
+            flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE, scope=YOUTUBE_UPLOAD_SCOPE)
             http = httplib2.Http()
-            credentials = run_flow(flow, STORAGE, http=http)
+            credentials = run_flow(flow, store, http=http)
         http = credentials.authorize(httplib2.Http())
         service = googleapiclient.discovery.build('youtube', 'v3', http=http)
         return service
@@ -482,6 +477,7 @@ class Ui_Dialog(object):
 
 if __name__ == "__main__":
     import sys
+
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
     ui = Ui_Dialog()

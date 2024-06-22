@@ -1,5 +1,6 @@
 client_secret.json
 login_token.json
+upload_token.json
 token.json
 main.py-oauth2.json
 .idea/*
