@@ -445,25 +445,25 @@ class Ui_Dialog(object):
         print(VALID_PRIVACY_STATUSES[1])
 
     def upload(self):
-        argparser.add_argument("--file", default=self.tvFilePath.text(), help="video name")
-        argparser.add_argument("--title", default=self.get_title(), help="Video title")
-        argparser.add_argument("--thumbnail", help="Path to the thumbnail image", default=self.tvImagePath.text())
-        argparser.add_argument("--description", help="Video description",
-                               default=self.get_description(self.get_title()))
-        argparser.add_argument("--category", default=category, help="category id")
-        argparser.add_argument("--keywords", help="Video keywords, comma separated", default=keyword)
-        argparser.add_argument("--privacyStatus", choices=VALID_PRIVACY_STATUSES,
-                               default=VALID_PRIVACY_STATUSES[1], help="Video privacy status.")
-
-        self.print_upload_args()
-        args = argparser.parse_args()
-
-        if not os.path.exists(args.file):
-            exit("Please specify a valid file using the --file= parameter.")
-
-        youtube = self.get_authenticated_service()
-
         try:
+            argparser.add_argument("--file", default=self.tvFilePath.text(), help="video name")
+            argparser.add_argument("--title", default=self.get_title(), help="Video title")
+            argparser.add_argument("--thumbnail", help="Path to the thumbnail image", default=self.tvImagePath.text())
+            argparser.add_argument("--description", help="Video description",
+                                   default=self.get_description(self.get_title()))
+            argparser.add_argument("--category", default=category, help="category id")
+            argparser.add_argument("--keywords", help="Video keywords, comma separated", default=keyword)
+            argparser.add_argument("--privacyStatus", choices=VALID_PRIVACY_STATUSES,
+                                   default=VALID_PRIVACY_STATUSES[1], help="Video privacy status.")
+
+            self.print_upload_args()
+            args = argparser.parse_args()
+
+            if not os.path.exists(args.file):
+                exit("Please specify a valid file using the --file= parameter.")
+
+            youtube = self.get_authenticated_service()
+
             video_id = self.initialize_upload(youtube, args)
             print(f"Uploaded video with ID: {video_id}")
 
