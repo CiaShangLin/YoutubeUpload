@@ -6,3 +6,5 @@ main.py-oauth2.json
 .idea/*
 main.spec
 YoutubeUpload.rar
+/build/*
+/dist/*
