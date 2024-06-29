@@ -2,18 +2,19 @@ import os
 import random
 import re
 import time
+
 import googleapiclient.discovery
 import googleapiclient.errors
 import httplib2
 from PyQt5 import QtCore, QtWidgets, QtGui
-from googleapiclient.http import MediaFileUpload
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
 from oauth2client import client, tools, file
 from oauth2client.client import flow_from_clientsecrets
-from oauth2client.file import Storage
-from oauth2client.tools import argparser, run_flow
+from oauth2client.tools import run_flow
 
 import UploadGoogleDrive
+from UploadArgs import UploadArgs
 
 httplib2.RETRIES = 1
 
@@ -51,7 +52,7 @@ LOGIN_TOKEN_FILE = "login_token.json"
 UPLOAD_TOKEN_FILE = "upload_token.json"
 CHANNEL_ID = 'UC9RrMSH_OaUP2kIFqzPrBpw'
 
-category = "20"
+category_id = "20"
 keyword = "StarCraft II,Protoss,Zerg,Nzx,Mzx,Mzs,906906,906,九妹,藍兔,Hui,mrbeast,館長,IEM,ESL,SC2,StarCraft,Onion Man"
 playList_PVT_id = "PL8TREsr2ZmqYpi_IM1zSQSarofDQftjLj"
 playList_PVZ_id = "PL8TREsr2ZmqaY8-tTDPvTLYRH38dtvY4I"
@@ -123,10 +124,6 @@ class Ui_Dialog(object):
         self.textEditEp = QtWidgets.QTextEdit(Dialog)
         self.textEditEp.setGeometry(QtCore.QRect(20, 430, 65, 30))
         self.textEditEp.setObjectName("textEdit_2")
-
-        self.textEditRr = QtWidgets.QTextEdit(Dialog)
-        self.textEditRr.setGeometry(QtCore.QRect(20, 470, 150, 30))
-        self.textEditRr.setObjectName("textEdit_3")
 
         self.verticalLayoutWidget = QtWidgets.QWidget(Dialog)
         self.verticalLayoutWidget.setGeometry(QtCore.QRect(20, 240, 301, 80))
@@ -281,11 +278,11 @@ class Ui_Dialog(object):
                 title=options.title,
                 description=options.description,
                 tags=tags,
-                categoryId=options.category,
+                categoryId=options.category_id,
                 thumbnail=options.thumbnail
             ),
             status=dict(
-                privacyStatus=options.privacyStatus
+                privacyStatus=options.privacy_status
             )
         )
         insert_request = youtube.videos().insert(
@@ -438,51 +435,48 @@ class Ui_Dialog(object):
         return title
 
     # 標題,描述:多種語言設定
-    def get_multi_language(self,replay_url):
+    def get_multi_language(self, replay_url):
         en_title = self.get_title()
-        en_description = self.get_description(en_title,replay_url)
+        en_description = self.get_description(en_title, replay_url)
 
         zhTW_title = self.english_to_chinese(en_title)
-        zhTW_description = self.get_description(zhTW_title,replay_url)
+        zhTW_description = self.get_description(zhTW_title, replay_url)
+
+
 
         return {
             'en': {'title': en_title, 'description': en_description},
-            'zh-TW': {'title': zhTW_title, 'description': zhTW_description}
+            'zh-TW': {'title': zhTW_title, 'description': zhTW_description},
         }
 
-    def print_upload_args(self,replay_url):
+    def print_upload_args(self, replay_url):
         print(self.tvFilePath.text())
         print(self.get_title())
         print(self.tvImagePath.text())
         print(self.tvReplayPath.text())
-        print(self.get_description(self.get_title(),replay_url))
-        print(category)
+        print(self.get_description(self.get_title(), replay_url))
+        print(category_id)
         print(keyword)
         print(VALID_PRIVACY_STATUSES[1])
 
     def upload(self):
         try:
             replay_file_path = self.tvReplayPath.text()
-            replay_url = UploadGoogleDrive.upload_replay(replay_file_path)
+            replay_url = ''
+            if replay_file_path != '':
+                replay_url = UploadGoogleDrive.upload_replay(replay_file_path)
 
-            argparser.add_argument("--file", default=self.tvFilePath.text(), help="video name")
-            argparser.add_argument("--title", default=self.get_title(), help="Video title")
-            argparser.add_argument("--thumbnail", help="Path to the thumbnail image", default=self.tvImagePath.text())
-            argparser.add_argument("--description", help="Video description",
-                                   default=self.get_description(self.get_title(),replay_url))
-            argparser.add_argument("--category", default=category, help="category id")
-            argparser.add_argument("--keywords", help="Video keywords, comma separated", default=keyword)
-            argparser.add_argument("--privacyStatus", choices=VALID_PRIVACY_STATUSES,
-                                   default=VALID_PRIVACY_STATUSES[1], help="Video privacy status.")
-
-            self.print_upload_args(replay_url)
-            args = argparser.parse_args()
-
-            if not os.path.exists(args.file):
-                exit("Please specify a valid file using the --file= parameter.")
+            args = UploadArgs(
+                file=self.tvFilePath.text(),
+                title=self.get_title(),
+                thumbnail=self.tvImagePath.text(),
+                description=self.get_description(self.get_title(), replay_url),
+                category_id=category_id,
+                keywords=keyword,
+                privacy_status=VALID_PRIVACY_STATUSES[1]
+            )
 
             youtube = self.get_authenticated_service()
-
             video_id = self.initialize_upload(youtube, args)
             print(f"Uploaded video with ID: {video_id}")
 
