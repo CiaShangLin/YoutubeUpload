@@ -8,3 +8,5 @@ main.spec
 YoutubeUpload.rar
 /build/*
 /dist/*
+token.pickle
+google_drive_client_secret.json

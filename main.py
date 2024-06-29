@@ -13,6 +13,8 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import argparser, run_flow
 
+import UploadGoogleDrive
+
 httplib2.RETRIES = 1
 
 MAX_RETRIES = 10
@@ -89,7 +91,7 @@ eng_to_ch = {
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(715, 559)
+        Dialog.resize(740, 620)
         self.tvFilePath = QtWidgets.QLabel(Dialog)
         self.tvFilePath.setGeometry(QtCore.QRect(120, 30, 601, 30))
         self.tvFilePath.setObjectName("tvFilePath")
@@ -99,12 +101,20 @@ class Ui_Dialog(object):
         self.btOpenVideo.setObjectName("btOpenVideo")
 
         self.btOpenImage = QtWidgets.QPushButton(Dialog)
-        self.btOpenImage.setGeometry(QtCore.QRect(20, 90, 80, 30))
+        self.btOpenImage.setGeometry(QtCore.QRect(20, 70, 80, 30))
         self.btOpenImage.setObjectName("btOpenImage")
 
         self.tvImagePath = QtWidgets.QLabel(Dialog)
-        self.tvImagePath.setGeometry(QtCore.QRect(120, 90, 601, 30))
+        self.tvImagePath.setGeometry(QtCore.QRect(120, 70, 601, 30))
         self.tvImagePath.setObjectName("tvImagePath")
+
+        self.btOpenReplay = QtWidgets.QPushButton(Dialog)
+        self.btOpenReplay.setGeometry(QtCore.QRect(20, 110, 80, 30))
+        self.btOpenReplay.setObjectName("btOpenReplay")
+
+        self.tvReplayPath = QtWidgets.QLabel(Dialog)
+        self.tvReplayPath.setGeometry(QtCore.QRect(120, 110, 601, 30))
+        self.tvReplayPath.setObjectName("tvReplayPath")
 
         self.textEditDescribe = QtWidgets.QTextEdit(Dialog)
         self.textEditDescribe.setGeometry(QtCore.QRect(20, 340, 651, 81))
@@ -182,6 +192,7 @@ class Ui_Dialog(object):
 
         self.btOpenVideo.clicked.connect(self.open_video_file)
         self.btOpenImage.clicked.connect(self.open_image_file)
+        self.btOpenReplay.clicked.connect(self.open_replay_file)
         self.btUpload.clicked.connect(self.upload)
 
         QtCore.QMetaObject.connectSlotsByName(Dialog)
@@ -194,6 +205,9 @@ class Ui_Dialog(object):
         self.btOpenVideo.setText(_translate("Dialog", "選擇檔案"))
         self.btOpenImage.setText(_translate("Dialog", "選擇縮圖"))
         self.tvImagePath.setText(_translate("Dialog", "Image Path"))
+        self.btOpenReplay.setText(_translate("Dialog", "選擇RP"))
+        self.tvReplayPath.setText(_translate("Dialog", "Replay Path"))
+
         self.textEditDescribe.setHtml(_translate("Dialog",
                                                  "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
                                                  "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
@@ -228,6 +242,12 @@ class Ui_Dialog(object):
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName()  # 選擇檔案對話視窗
         if filePath:
             self.tvImagePath.setText(filePath)
+
+    # 選擇RP路徑
+    def open_replay_file(self):
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName()  # 選擇檔案對話視窗
+        if filePath:
+            self.tvReplayPath.setText(filePath)
 
     def get_authenticated_service_ssl(self):
         # 檢查 token.json 檔案，若不存在則進行 OAuth 流程
@@ -388,10 +408,10 @@ class Ui_Dialog(object):
         return result + " " + self.textEditEp.toPlainText()
 
     # 取得預設描述
-    def get_description(self, title):
+    def get_description(self, title, replay_url):
         tags = '#startcraft2 #星海爭霸2 #gaming'
-        rp = f'RP : '
-        description = f'{tags}\n{title}\n{rp}{self.textEditRr.toPlainText()}'
+        rp = f'RP : {replay_url}'
+        description = f'{tags}\n{title}\n{rp}'
         return description
 
     # 取得有添加的播放列表
@@ -418,40 +438,44 @@ class Ui_Dialog(object):
         return title
 
     # 標題,描述:多種語言設定
-    def get_multi_language(self):
+    def get_multi_language(self,replay_url):
         en_title = self.get_title()
-        en_description = self.get_description(en_title)
+        en_description = self.get_description(en_title,replay_url)
 
         zhTW_title = self.english_to_chinese(en_title)
-        zhTW_description = self.get_description(zhTW_title)
+        zhTW_description = self.get_description(zhTW_title,replay_url)
 
         return {
             'en': {'title': en_title, 'description': en_description},
             'zh-TW': {'title': zhTW_title, 'description': zhTW_description}
         }
 
-    def print_upload_args(self):
+    def print_upload_args(self,replay_url):
         print(self.tvFilePath.text())
         print(self.get_title())
         print(self.tvImagePath.text())
-        print(self.get_description(self.get_title()))
+        print(self.tvReplayPath.text())
+        print(self.get_description(self.get_title(),replay_url))
         print(category)
         print(keyword)
         print(VALID_PRIVACY_STATUSES[1])
 
     def upload(self):
         try:
+            replay_file_path = self.tvReplayPath.text()
+            replay_url = UploadGoogleDrive.upload_replay(replay_file_path)
+
             argparser.add_argument("--file", default=self.tvFilePath.text(), help="video name")
             argparser.add_argument("--title", default=self.get_title(), help="Video title")
             argparser.add_argument("--thumbnail", help="Path to the thumbnail image", default=self.tvImagePath.text())
             argparser.add_argument("--description", help="Video description",
-                                   default=self.get_description(self.get_title()))
+                                   default=self.get_description(self.get_title(),replay_url))
             argparser.add_argument("--category", default=category, help="category id")
             argparser.add_argument("--keywords", help="Video keywords, comma separated", default=keyword)
             argparser.add_argument("--privacyStatus", choices=VALID_PRIVACY_STATUSES,
                                    default=VALID_PRIVACY_STATUSES[1], help="Video privacy status.")
 
-            self.print_upload_args()
+            self.print_upload_args(replay_url)
             args = argparser.parse_args()
 
             if not os.path.exists(args.file):
@@ -467,7 +491,7 @@ class Ui_Dialog(object):
 
             ssl = self.get_authenticated_service_ssl()
             self.add_video_to_playlist(ssl, video_id, self.get_add_playlist())
-            self.add_video_localizations(ssl, video_id, self.get_multi_language())
+            self.add_video_localizations(ssl, video_id, self.get_multi_language(replay_url))
             print("上傳完成")
         except HttpError as e:
             print("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
