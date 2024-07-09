@@ -434,6 +434,16 @@ class Ui_Dialog(object):
             title = title.replace(eng, tw)
         return title
 
+    def english_to_japan(self, title):
+        for eng, ja in eng_to_ja.items():
+            title = title.replace(eng, ja)
+        return title
+
+    def english_to_kr(self, title):
+        for eng, kr in eng_to_kr.items():
+            title = title.replace(eng, kr)
+        return title
+
     # 標題,描述:多種語言設定
     def get_multi_language(self, replay_url):
         en_title = self.get_title()
@@ -442,11 +452,17 @@ class Ui_Dialog(object):
         zhTW_title = self.english_to_chinese(en_title)
         zhTW_description = self.get_description(zhTW_title, replay_url)
 
+        ja_title = self.english_to_japan(en_title)
+        ja_description = self.get_description(ja_title, replay_url)
 
+        kr_title = self.english_to_kr(en_title)
+        kr_description = self.get_description(kr_title, replay_url)
 
         return {
             'en': {'title': en_title, 'description': en_description},
             'zh-TW': {'title': zhTW_title, 'description': zhTW_description},
+            'ja': {'title': ja_title, 'description': ja_description},
+            'ko': {'title': kr_title, 'description': kr_description}
         }
 
     def print_upload_args(self, replay_url):
