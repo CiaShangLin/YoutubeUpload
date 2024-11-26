@@ -8,9 +8,9 @@ from googleapiclient.http import MediaFileUpload
 
 # 如果修改這些範圍，請刪除token.pickle檔案
 SCOPES = ['https://www.googleapis.com/auth/drive.file']
-google_drive_client_secret = 'google_drive_client_secret.json'
+google_drive_client_secret = 'token.json'
 temp_token = 'google_drive_token.pickle'
-replay_folder_id = '1qNBBlfLe17nEOE9aI5ePcs55DGsmgp0J'
+replay_folder_id = '1ZJLoKqzxymZ9XUyYeOWmvZkeEwxTti-x'
 
 
 def cut_string(input_string):
@@ -59,4 +59,4 @@ def upload_replay(filePath):
 
 
 if __name__ == '__main__':
-    upload_replay('')
+    upload_replay("")
