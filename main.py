@@ -394,15 +394,28 @@ class Ui_Dialog(object):
         return response.get("items", [])
 
     # 取得標題,預設剔除副檔名和時間戳
+    # def get_title(self):
+    #     # 提取檔名
+    #     basename = os.path.basename(self.tvFilePath.text())
+    #     # 移除附檔名
+    #     new_filename = basename.rsplit(".", 1)[0].strip()
+    #     pattern = r"(【StarCraft II】.*?KR Server)"
+    #     match = re.search(pattern, new_filename)
+    #     result = match.group(1)
+    #     #return result + " " + self.textEditEp.toPlainText()
+    #     return result
+
     def get_title(self):
         # 提取檔名
         basename = os.path.basename(self.tvFilePath.text())
         # 移除附檔名
         new_filename = basename.rsplit(".", 1)[0].strip()
+        # 更新 pattern 以替換標題
         pattern = r"(【StarCraft II】.*?KR Server)"
         match = re.search(pattern, new_filename)
-        result = match.group(1)
-        return result + " " + self.textEditEp.toPlainText()
+        result = match.group(1).replace("【StarCraft II】", "【星海爭霸2】")
+        return result
+
 
     # 取得預設描述
     def get_description(self, title, replay_url):
