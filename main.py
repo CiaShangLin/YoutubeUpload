@@ -419,7 +419,7 @@ class Ui_Dialog(object):
 
     # 取得預設描述
     def get_description(self, title, replay_url):
-        tags = '#startcraft2 #星海爭霸2 #gaming'
+        tags = '#starcraft2 #星海爭霸2 #gaming'
         rp = f'RP : {replay_url}'
         description = f'{tags}\n{title}\n{rp}'
         return description
