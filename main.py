@@ -421,7 +421,7 @@ class Ui_Dialog(object):
             title = self.textEditTitle.toPlainText()
             description = self.textEditDescribe.toPlainText()
             if replay_url:
-                description += f"\nRP : {replay_url}"
+                description += f"RP : {replay_url}"
 
             args = UploadArgs(
                 file=self.tvFilePath.text(),
@@ -451,8 +451,6 @@ class Ui_Dialog(object):
 
 
 if __name__ == "__main__":
-
-
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
     ui = Ui_Dialog()
