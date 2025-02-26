@@ -10,6 +10,7 @@
 - 設定指定播放清單
 - 設定分類
 - 設定多國語言標題和描述
+- 標題判斷勾選類型,天梯預設打勾
 
 ### 設定教學
 https://developers.google.com/youtube/v3/quickstart/python?hl=zh-tw#step_1_set_up_your_project_and_credentials
@@ -49,7 +50,21 @@ pyuic5 -x main.ui -o main.py
 
 Pyinstall
 
-pyinstaller --onefile main.py
+pyinstaller --onefile --add-data "token.json;." --add-data "icon.jpg;." main.py
+
+### 更新日誌
+2025/2/27 
+使用Grok3
+功能: 增強 YouTube 上傳 GUI，新增功能並支持打包
+- 根據檔案名稱解析自動選擇對戰類型 (PVP, PVZ, PVT)
+- 將 SC2 天梯勾選框 (`ckbRank`) 設為預設勾選
+- 移除不再需要的 `textEditEp` 控件
+- 更新標籤以提升影片曝光率 (使用進階曝光組合)
+- 實現 `token.json` 和 `icon.jpg` 的動態資源路徑處理
+- 支持使用 PyInstaller 將 `token.json` 和 `icon.jpg` 打包進單一執行文件
+- 修復發布時間時區問題，明確指定 UTC+8
+- 將預設發布時間設為本地時間下午 6 點
+- 改進影片描述中 replay URL 的附加邏輯
 
 ### Youtube頻道
 無聊可以訂閱一下 感謝~~
