@@ -49,7 +49,7 @@ pyuic5 -x main.ui -o main.py
 
 Pyinstall
 
-pyinstaller --onefile main.py
+pyinstaller --onefile --add-data "token.json;." --add-data "icon.jpg;." main.py
 
 ### Youtube頻道
 無聊可以訂閱一下 感謝~~
