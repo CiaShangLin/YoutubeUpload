@@ -1,3 +1,6 @@
+from googleapiclient.errors import HttpError
+import time
+
 class YouTubeUploadError(Exception):
     """YouTube上傳過程中的錯誤基類"""
     pass
