@@ -450,10 +450,48 @@ class Ui_Dialog(object):
             print(f"An error occurred: {str(e)}")
 
 
+class YouTubeUploadUI(Ui_Dialog):
+    def __init__(self):
+        super().__init__()
+        
+    # UI相關方法保留在這裡
+    
+
+class YouTubeService:
+    def __init__(self):
+        self.MAX_RETRIES = 10
+        self.RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError)
+        self.RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
+        
+    def get_authenticated_service(self, token_file, scope):
+        # 認證相關代碼
+        pass
+        
+    def upload_video(self, options):
+        # 上傳視頻相關代碼
+        pass
+    
+    # 其他YouTube API相關方法
+    
+
+class LanguageProcessor:
+    def __init__(self):
+        self.eng_to_tw = {"Protoss": "神族", "Zerg": "蟲族", "Terran": "人族", "Random": "隨機"}
+        self.eng_to_ja = {"Protoss": "プロトス", "Zerg": "ザーグ", "Terran": "テラン", "Random": "ランダム"}
+        self.eng_to_kr = {"Protoss": "프로トス", "Zerg": "저그", "Terran": "テラン", "Random": "랜덤"}
+        self.eng_to_ch = {"Protoss": "神族", "Zerg": "虫族", "Terran": "人类", "Random": "随机"}
+        
+    def english_to_chinese(self, title):
+        # 轉換代碼
+        pass
+    
+    # 其他語言轉換方法
+
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
+    ui = YouTubeUploadUI()
     ui.setupUi(Dialog)
     Dialog.show()
     sys.exit(app.exec_())
