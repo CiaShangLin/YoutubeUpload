@@ -182,15 +182,20 @@ class Ui_Dialog(object):
         self.labelPublishTime.setText(_translate("Dialog", "發布時間"))
         self.btUpload.setText(_translate("Dialog", "上傳"))
 
+    def get_vidoe_file_title(self):
+        filePath, _ = QtWidgets.QFileDialog.getOpenFileName()
+        return self.get_title(filePath)
+
+
     def open_video_file(self):
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName()
         if filePath:
             self.tvFilePath.setText(filePath)
             title = self.get_title(filePath)
             self.textEditTitle.setPlainText(title)
-            replay_url = ""
-            description = self.get_description(title, replay_url)
-            self.textEditDescribe.setPlainText(description)
+            # replay_url = ""
+            # description = self.get_description(title, replay_url)
+            # self.textEditDescribe.setPlainText(description)
 
             # 根據檔案名稱自動勾選對戰類型
             basename = os.path.basename(filePath)
@@ -235,10 +240,10 @@ class Ui_Dialog(object):
             return match.group(1).replace("【StarCraft II】", f"【{game_name}】")
         return new_filename
 
-    def get_description(self, title, replay_url):
+    def get_description(self, title, replay_url,social_links):
         tags = '#starcraft2 #星海爭霸2 #gaming'
         rp = f'RP : {replay_url}' if replay_url else ""
-        return f'{tags}\n{title}\n{rp}'
+        return f'{tags}\n{title}\n{rp}\n{social_links}'
 
     def get_add_playlist(self):
         playList = []
@@ -267,18 +272,18 @@ class Ui_Dialog(object):
             title = title.replace(eng, kr)
         return title
 
-    def get_multi_language(self, replay_url):
+    def get_multi_language(self, replay_url,social_links):
         en_title = self.textEditTitle.toPlainText()
-        en_description = self.get_description(en_title, replay_url)
+        en_description = self.get_description(en_title, replay_url,social_links)
 
         zhTW_title = self.english_to_chinese(en_title)
-        zhTW_description = self.get_description(zhTW_title, replay_url)
+        zhTW_description = self.get_description(zhTW_title, replay_url,social_links)
 
         ja_title = self.english_to_japan(en_title)
-        ja_description = self.get_description(ja_title, replay_url)
+        ja_description = self.get_description(ja_title, replay_url,social_links)
 
         kr_title = self.english_to_kr(en_title)
-        kr_description = self.get_description(kr_title, replay_url)
+        kr_description = self.get_description(kr_title, replay_url,social_links)
 
         return {
             'en': {'title': en_title, 'description': en_description},
@@ -429,9 +434,8 @@ class Ui_Dialog(object):
             replay_url = UploadGoogleDrive.upload_replay(replay_file_path) if replay_file_path else ""
 
             title = self.textEditTitle.toPlainText()
-            description = self.textEditDescribe.toPlainText()
-            if replay_url:
-                description += f"RP : {replay_url}"
+            description = self.get_description(title = title,replay_url=replay_url,social_links=self.get_social_links())
+
 
             args = UploadArgs(
                 file=self.tvFilePath.text(),
@@ -452,7 +456,8 @@ class Ui_Dialog(object):
 
             ssl = self.get_authenticated_service_ssl()
             self.add_video_to_playlist(ssl, video_id, self.get_add_playlist())
-            self.add_video_localizations(ssl, video_id, self.get_multi_language(replay_url))
+            self.add_video_localizations(ssl, video_id, self.get_multi_language(replay_url,self.get_social_links()))
+
             print("上傳完成")
         except HttpError as e:
             print(f"An HTTP error {e.resp.status} occurred:\n{e.content}")
