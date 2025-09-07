@@ -244,6 +244,11 @@ class Ui_Dialog(object):
         tags = '#starcraft2 #星海爭霸2 #gaming'
         rp = f'RP : {replay_url}' if replay_url else ""
         return f'{tags}\n{title}\n{rp}\n{social_links}'
+    
+    def get_description_without_social(self, title, replay_url):
+        tags = '#starcraft2 #星海爭霸2 #gaming'
+        rp = f'RP : {replay_url}' if replay_url else ""
+        return f'{tags}\n{title}\n{rp}'
 
     def get_add_playlist(self):
         playList = []
@@ -274,7 +279,7 @@ class Ui_Dialog(object):
 
     def get_multi_language(self, replay_url,social_links):
         en_title = self.textEditTitle.toPlainText()
-        en_description = self.get_description(en_title, replay_url,social_links)
+        en_description = self.get_description(en_title, replay_url,"")
 
         zhTW_title = self.english_to_chinese(en_title)
         zhTW_description = self.get_description(zhTW_title, replay_url,social_links)
