@@ -1,496 +1,251 @@
 import os
-import random
-import re
-import time
 import sys
+from typing import List
 from PyQt5 import QtCore, QtWidgets, QtGui
-import googleapiclient.discovery
-import googleapiclient.errors
-import httplib2
-from googleapiclient.errors import HttpError
-from googleapiclient.http import MediaFileUpload
-from oauth2client import client, tools, file
-from oauth2client.client import flow_from_clientsecrets
-from oauth2client.tools import run_flow
 
-import UploadGoogleDrive
-from UploadArgs import UploadArgs
 from token_manager import TokenManager
+from video_item import VideoItem, UploadStatus
 from dialogs.token_status_dialog import TokenStatusDialog
-
-httplib2.RETRIES = 1
-MAX_RETRIES = 10
-RETRIABLE_EXCEPTIONS = (httplib2.HttpLib2Error, IOError)
-RETRIABLE_STATUS_CODES = [500, 502, 503, 504]
-
-CLIENT_SECRETS_FILE = "token.json"
-YOUTUBE_UPLOAD_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
-YOUTUBE_SSL_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl"
-YOUTUBE_API_SERVICE_NAME = "youtube"
-YOUTUBE_API_VERSION = "v3"
-LOGIN_TOKEN_FILE = "login_token.json"
-UPLOAD_TOKEN_FILE = "upload_token.json"
-CHANNEL_ID = 'UC9RrMSH_OaUP2kIFqzPrBpw'
-
-VALID_PRIVACY_STATUSES = ("public", "private", "unlisted")
-category_id = "20"
-keyword = "StarCraft II, Starcraft 2, SC2, 星海爭霸2, Ladder, 天梯, Ranked Match, Protoss, 神族, Zerg, 蟲族, Terran, 人族, Nzx, Gameplay, SC2 Strategy, PvP, PvZ, PvT, IEM, ESL, KR Server"
-playList_PVT_id = "PL8TREsr2ZmqYpi_IM1zSQSarofDQftjLj"
-playList_PVZ_id = "PL8TREsr2ZmqaY8-tTDPvTLYRH38dtvY4I"
-playList_PVP_id = "PL8TREsr2ZmqbGXupnsOkyzoFTkr12cmVF"
-playList_PVR_id = "PL8TREsr2ZmqY80QnGjRpFpxcq2ES_YGKf"
-playList_Sc2Rank_id = "PL8TREsr2ZmqbIAM5TODn26C8my3cNiRev"
-
-eng_to_tw = {"Protoss": "神族", "Zerg": "蟲族", "Terran": "人族", "Random": "隨機"}
-eng_to_ja = {"Protoss": "プロトス", "Zerg": "ザーグ", "Terran": "テラン", "Random": "ランダム"}
-eng_to_kr = {"Protoss": "프로トス", "Zerg": "저그", "Terran": "テラン", "Random": "랜덤"}
-eng_to_ch = {"Protoss": "神族", "Zerg": "虫族", "Terran": "人类", "Random": "随机"}
+from dialogs.video_editor_dialog import VideoEditorDialog
 
 
-class Ui_Dialog(object):
-    def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
-        Dialog.resize(740, 700)
-        
-        # 初始化 Token 管理器
+class BatchUploadWindow(QtWidgets.QMainWindow):
+    """批次上傳主視窗"""
+    
+    def __init__(self):
+        super().__init__()
         self.token_manager = TokenManager()
+        self.video_list: List[VideoItem] = []
+        self.setupUi()
+    
+    def setupUi(self):
+        """設置 UI"""
+        self.setObjectName("BatchUploadWindow")
+        self.setWindowTitle("YouTube 批次上傳器")
+        self.setWindowIcon(QtGui.QIcon('icon.jpg'))
+        self.resize(900, 600)
         
-        # Token 檢查按鈕（放在最上方）
-        self.btCheckToken = QtWidgets.QPushButton(Dialog)
-        self.btCheckToken.setGeometry(QtCore.QRect(620, 0, 120, 25))
-        self.btCheckToken.setObjectName("btCheckToken")
-
-        self.tvFilePath = QtWidgets.QLabel(Dialog)
-        self.tvFilePath.setGeometry(QtCore.QRect(120, 30, 601, 30))
-        self.tvFilePath.setObjectName("tvFilePath")
-
-        self.btOpenVideo = QtWidgets.QPushButton(Dialog)
-        self.btOpenVideo.setGeometry(QtCore.QRect(20, 30, 80, 30))
-        self.btOpenVideo.setObjectName("btOpenVideo")
-
-        self.btOpenImage = QtWidgets.QPushButton(Dialog)
-        self.btOpenImage.setGeometry(QtCore.QRect(20, 70, 80, 30))
-        self.btOpenImage.setObjectName("btOpenImage")
-
-        self.tvImagePath = QtWidgets.QLabel(Dialog)
-        self.tvImagePath.setGeometry(QtCore.QRect(120, 70, 601, 30))
-        self.tvImagePath.setObjectName("tvImagePath")
-
-        self.btOpenReplay = QtWidgets.QPushButton(Dialog)
-        self.btOpenReplay.setGeometry(QtCore.QRect(20, 110, 80, 30))
-        self.btOpenReplay.setObjectName("btOpenReplay")
-
-        self.tvReplayPath = QtWidgets.QLabel(Dialog)
-        self.tvReplayPath.setGeometry(QtCore.QRect(120, 110, 601, 30))
-        self.tvReplayPath.setObjectName("tvReplayPath")
-
-        self.verticalLayoutWidget_2 = QtWidgets.QWidget(Dialog)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(20, 140, 651, 80))
-        self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.label_2 = QtWidgets.QLabel(self.verticalLayoutWidget_2)
-        self.label_2.setObjectName("label_2")
-        self.verticalLayout_2.addWidget(self.label_2)
-        self.horizontalLayout = QtWidgets.QHBoxLayout()
-        self.ckbRank = QtWidgets.QCheckBox(self.verticalLayoutWidget_2)
-        self.ckbRank.setObjectName("ckbRank")
-        self.ckbRank.setChecked(True)
-        self.horizontalLayout.addWidget(self.ckbRank)
-        self.ckbPVP = QtWidgets.QCheckBox(self.verticalLayoutWidget_2)
-        self.ckbPVP.setObjectName("ckbPVP")
-        self.horizontalLayout.addWidget(self.ckbPVP)
-        self.ckbPVZ = QtWidgets.QCheckBox(self.verticalLayoutWidget_2)
-        self.ckbPVZ.setObjectName("ckbPVZ")
-        self.horizontalLayout.addWidget(self.ckbPVZ)
-        self.ckbPVT = QtWidgets.QCheckBox(self.verticalLayoutWidget_2)
-        self.ckbPVT.setObjectName("ckbPVT")
-        self.horizontalLayout.addWidget(self.ckbPVT)
-        self.verticalLayout_2.addLayout(self.horizontalLayout)
-
-        self.verticalLayoutWidget = QtWidgets.QWidget(Dialog)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(20, 240, 301, 80))
-        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
-        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.label_3 = QtWidgets.QLabel(self.verticalLayoutWidget)
-        self.label_3.setObjectName("label_3")
-        self.verticalLayout_2.addWidget(self.label_3)
-        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
-        self.ckbEn = QtWidgets.QCheckBox(self.verticalLayoutWidget)
-        self.ckbEn.setChecked(True)
-        self.ckbEn.setObjectName("ckbEn")
-        self.horizontalLayout_2.addWidget(self.ckbEn)
-        self.ckbTW = QtWidgets.QCheckBox(self.verticalLayoutWidget)
-        self.ckbTW.setChecked(True)
-        self.ckbTW.setObjectName("ckbTW")
-        self.horizontalLayout_2.addWidget(self.ckbTW)
-        self.verticalLayout_2.addLayout(self.horizontalLayout_2)
-
-        self.textEditDescribe = QtWidgets.QTextEdit(Dialog)
-        self.textEditDescribe.setGeometry(QtCore.QRect(20, 600, 651, 81))
-        self.textEditDescribe.setObjectName("textEdit")
-
-        self.labelGame = QtWidgets.QLabel(Dialog)
-        self.labelGame.setGeometry(QtCore.QRect(20, 470, 80, 30))
-        self.labelGame.setObjectName("labelGame")
-        self.gameInput = QtWidgets.QLineEdit(Dialog)
-        self.gameInput.setGeometry(QtCore.QRect(120, 470, 200, 30))
-        self.gameInput.setText("StarCraft II")
-
-        self.labelPublishTime = QtWidgets.QLabel(Dialog)
-        self.labelPublishTime.setGeometry(QtCore.QRect(20, 510, 80, 30))
-        self.labelPublishTime.setObjectName("labelPublishTime")
-        self.publishTime = QtWidgets.QDateTimeEdit(Dialog)
-        self.publishTime.setGeometry(QtCore.QRect(120, 510, 200, 30))
-        self.publishTime.setCalendarPopup(True)
-        self.publishTime.setDateTime(QtCore.QDateTime(QtCore.QDate.currentDate(), QtCore.QTime(18, 0)))
-
-        self.textEditTitle = QtWidgets.QTextEdit(Dialog)
-        self.textEditTitle.setGeometry(QtCore.QRect(20, 550, 651, 40))
-        self.textEditTitle.setObjectName("textEditTitle")
-
-        self.btUpload = QtWidgets.QPushButton(Dialog)
-        self.btUpload.setGeometry(QtCore.QRect(560, 650, 113, 32))
-        self.btUpload.setObjectName("btUpload")
-
-        self.retranslateUi(Dialog)
-
+        # 中央 Widget
+        central_widget = QtWidgets.QWidget(self)
+        self.setCentralWidget(central_widget)
+        
+        # 主佈局
+        main_layout = QtWidgets.QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
+        
+        # === 頂部工具列 ===
+        toolbar_layout = QtWidgets.QHBoxLayout()
+        
+        title_label = QtWidgets.QLabel("影片上傳列表")
+        title_font = QtGui.QFont()
+        title_font.setPointSize(14)
+        title_font.setBold(True)
+        title_label.setFont(title_font)
+        toolbar_layout.addWidget(title_label)
+        
+        toolbar_layout.addStretch()
+        
+        self.btCheckToken = QtWidgets.QPushButton("🔐 檢查 Token")
         self.btCheckToken.clicked.connect(self.check_token_status)
-        self.btOpenVideo.clicked.connect(self.open_video_file)
-        self.btOpenImage.clicked.connect(self.open_image_file)
-        self.btOpenReplay.clicked.connect(self.open_replay_file)
-        self.btUpload.clicked.connect(self.upload)
-
-        QtCore.QMetaObject.connectSlotsByName(Dialog)
-
-    def retranslateUi(self, Dialog):
-        _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "YoutubeUpload"))
-        Dialog.setWindowIcon(QtGui.QIcon('icon.jpg'))
-        self.btCheckToken.setText(_translate("Dialog", "🔐 檢查 Token"))
-        self.tvFilePath.setText(_translate("Dialog", "File Path"))
-        self.btOpenVideo.setText(_translate("Dialog", "選擇檔案"))
-        self.btOpenImage.setText(_translate("Dialog", "選擇縮圖"))
-        self.tvImagePath.setText(_translate("Dialog", "Image Path"))
-        self.btOpenReplay.setText(_translate("Dialog", "選擇RP"))
-        self.tvReplayPath.setText(_translate("Dialog", "Replay Path"))
-        self.textEditDescribe.setHtml(_translate("Dialog",
-                                                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-                                                 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-                                                 "p, li { white-space: pre-wrap; }\n"
-                                                 "</style></head><body style=\" font-family:\'.AppleSystemUIFont\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
-                                                 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-family:\'PMingLiU\'; font-size:9pt;\">#startcraft2 #星海爭霸2 #gaming</span></p>\n"
-                                                 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:\'PMingLiU\'; font-size:9pt;\"><br /></p></body></html>"))
-        self.label_3.setText(_translate("Dialog", "字幕語言"))
-        self.ckbEn.setText(_translate("Dialog", "英文(預設)"))
-        self.ckbTW.setText(_translate("Dialog", "中文(台灣)"))
-        self.label_2.setText(_translate("Dialog", "播放清單"))
-        self.ckbRank.setText(_translate("Dialog", "SC2天梯"))
-        self.ckbPVP.setText(_translate("Dialog", "PVP"))
-        self.ckbPVZ.setText(_translate("Dialog", "PVZ"))
-        self.ckbPVT.setText(_translate("Dialog", "PVT"))
-        self.labelGame.setText(_translate("Dialog", "遊戲名稱"))
-        self.labelPublishTime.setText(_translate("Dialog", "發布時間"))
-        self.btUpload.setText(_translate("Dialog", "上傳"))
-
-    def get_vidoe_file_title(self):
-        filePath, _ = QtWidgets.QFileDialog.getOpenFileName()
-        return self.get_title(filePath)
-
-
-    def open_video_file(self):
-        filePath, _ = QtWidgets.QFileDialog.getOpenFileName()
-        if filePath:
-            self.tvFilePath.setText(filePath)
-            title = self.get_title(filePath)
-            self.textEditTitle.setPlainText(title)
-            # replay_url = ""
-            # description = self.get_description(title, replay_url)
-            # self.textEditDescribe.setPlainText(description)
-
-            # 根據檔案名稱自動勾選對戰類型
-            basename = os.path.basename(filePath)
-            print(f"檔案名稱: {basename}")
-            pattern = r".*\((Protoss|Zerg|Terran)(?:\s*\d*)\)\s*vs\s*.*\((Protoss|Zerg|Terran)(?:\s*\d*)\)"
-            match = re.search(pattern, basename, re.IGNORECASE)
-            if match:
-                left_race, right_race = match.groups()
-                print(f"左種族: {left_race}, 右種族: {right_race}")
-                self.ckbPVP.setChecked(False)
-                self.ckbPVZ.setChecked(False)
-                self.ckbPVT.setChecked(False)
-                if left_race.lower() == "protoss" and right_race.lower() == "protoss":
-                    self.ckbPVP.setChecked(True)
-                    print("勾選 PVP")
-                elif left_race.lower() == "protoss" and right_race.lower() == "zerg":
-                    self.ckbPVZ.setChecked(True)
-                    print("勾選 PVZ")
-                elif left_race.lower() == "protoss" and right_race.lower() == "terran":
-                    self.ckbPVT.setChecked(True)
-                    print("勾選 PVT")
-            else:
-                print("未匹配到對戰種族")
-
-    def open_image_file(self):
-        filePath, _ = QtWidgets.QFileDialog.getOpenFileName()
-        if filePath:
-            self.tvImagePath.setText(filePath)
-
-    def open_replay_file(self):
-        filePath, _ = QtWidgets.QFileDialog.getOpenFileName()
-        if filePath:
-            self.tvReplayPath.setText(filePath)
+        toolbar_layout.addWidget(self.btCheckToken)
+        
+        main_layout.addLayout(toolbar_layout)
+        
+        # === 影片列表表格 ===
+        self.video_table = QtWidgets.QTableWidget()
+        self.video_table.setColumnCount(6)
+        self.video_table.setHorizontalHeaderLabels([
+            "#", "標題", "對戰類型", "發布時間", "狀態", "操作"
+        ])
+        
+        # 設定欄位寬度
+        header = self.video_table.horizontalHeader()
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeToContents)  # #
+        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)  # 標題
+        header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)  # 對戰類型
+        header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)  # 發布時間
+        header.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeToContents)  # 狀態
+        header.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeToContents)  # 操作
+        
+        # 設定選擇模式
+        self.video_table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.video_table.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        
+        main_layout.addWidget(self.video_table)
+        
+        # === 按鈕列 ===
+        button_layout = QtWidgets.QHBoxLayout()
+        
+        self.btAddVideo = QtWidgets.QPushButton("➕ 新增影片")
+        self.btAddVideo.clicked.connect(self.add_video)
+        button_layout.addWidget(self.btAddVideo)
+        
+        self.btRemoveVideo = QtWidgets.QPushButton("➖ 移除影片")
+        self.btRemoveVideo.clicked.connect(self.remove_video)
+        button_layout.addWidget(self.btRemoveVideo)
+        
+        self.btEditVideo = QtWidgets.QPushButton("✏️ 編輯影片")
+        self.btEditVideo.clicked.connect(self.edit_video)
+        button_layout.addWidget(self.btEditVideo)
+        
+        button_layout.addStretch()
+        
+        self.btStartUpload = QtWidgets.QPushButton("🚀 開始批次上傳")
+        self.btStartUpload.clicked.connect(self.start_batch_upload)
+        self.btStartUpload.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+                padding: 8px 16px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+            }
+        """)
+        button_layout.addWidget(self.btStartUpload)
+        
+        main_layout.addLayout(button_layout)
+        
+        # === 進度顯示 ===
+        progress_layout = QtWidgets.QHBoxLayout()
+        
+        self.progress_label = QtWidgets.QLabel("就緒")
+        progress_layout.addWidget(self.progress_label)
+        
+        self.progress_bar = QtWidgets.QProgressBar()
+        self.progress_bar.setVisible(False)
+        progress_layout.addWidget(self.progress_bar, 1)
+        
+        main_layout.addLayout(progress_layout)
     
     def check_token_status(self):
         """開啟 Token 狀態檢查對話框"""
-        dialog = TokenStatusDialog(self.token_manager)
+        dialog = TokenStatusDialog(self.token_manager, self)
         dialog.exec_()
-
-    def get_title(self, file_path):
-        basename = os.path.basename(file_path)
-        new_filename = basename.rsplit(".", 1)[0].strip()
-        pattern = r"(【StarCraft II】.*?KR Server)"
-        match = re.search(pattern, new_filename)
-        if match:
-            game_name = self.gameInput.text() if self.gameInput.text() else "StarCraft II"
-            return match.group(1).replace("【StarCraft II】", f"【{game_name}】")
-        return new_filename
-
-    def get_description(self, title, replay_url,social_links):
-        tags = '#starcraft2 #星海爭霸2 #gaming'
-        rp = f'RP : {replay_url}' if replay_url else ""
-        return f'{tags}\n{title}\n{rp}\n{social_links}'
     
-    def get_description_without_social(self, title, replay_url):
-        tags = '#starcraft2 #星海爭霸2 #gaming'
-        rp = f'RP : {replay_url}' if replay_url else ""
-        return f'{tags}\n{title}\n{rp}'
-
-    def get_add_playlist(self):
-        playList = []
-        if self.ckbPVZ.isChecked():
-            playList.append(playList_PVZ_id)
-        if self.ckbPVP.isChecked():
-            playList.append(playList_PVP_id)
-        if self.ckbPVT.isChecked():
-            playList.append(playList_PVT_id)
-        if self.ckbRank.isChecked():
-            playList.append(playList_Sc2Rank_id)
-        return playList
-
-    def english_to_chinese(self, title):
-        for eng, tw in eng_to_tw.items():
-            title = title.replace(eng, tw)
-        return title
-
-    def english_to_japan(self, title):
-        for eng, ja in eng_to_ja.items():
-            title = title.replace(eng, ja)
-        return title
-
-    def english_to_kr(self, title):
-        for eng, kr in eng_to_kr.items():
-            title = title.replace(eng, kr)
-        return title
-
-    def get_multi_language(self, replay_url,social_links):
-        en_title = self.textEditTitle.toPlainText()
-        en_description = self.get_description(en_title, replay_url,"")
-
-        zhTW_title = self.english_to_chinese(en_title)
-        zhTW_description = self.get_description(zhTW_title, replay_url,social_links)
-
-        ja_title = self.english_to_japan(en_title)
-        ja_description = self.get_description(ja_title, replay_url,social_links)
-
-        kr_title = self.english_to_kr(en_title)
-        kr_description = self.get_description(kr_title, replay_url,social_links)
-
-        return {
-            'en': {'title': en_title, 'description': en_description},
-            'zh-TW': {'title': zhTW_title, 'description': zhTW_description},
-            'ja': {'title': ja_title, 'description': ja_description},
-            'ko': {'title': kr_title, 'description': kr_description}
-        }
-
-    def get_authenticated_service_ssl(self):
-        credential_path = os.path.join("./", LOGIN_TOKEN_FILE)
-        store = file.Storage(credential_path)
-        credentials = store.get()
-        if not credentials or credentials.invalid:
-            flow = client.flow_from_clientsecrets(CLIENT_SECRETS_FILE, YOUTUBE_SSL_SCOPE)
-            credentials = tools.run_flow(flow, store)
-        return googleapiclient.discovery.build("youtube", "v3", credentials=credentials)
-
-    def get_authenticated_service(self):
-        credential_path = os.path.join("./", UPLOAD_TOKEN_FILE)
-        store = file.Storage(credential_path)
-        credentials = store.get()
-        if credentials is None or credentials.invalid:
-            flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE, scope=YOUTUBE_UPLOAD_SCOPE)
-            http = httplib2.Http()
-            credentials = run_flow(flow, store, http=http)
-        http = credentials.authorize(httplib2.Http())
-        return googleapiclient.discovery.build('youtube', 'v3', http=http)
-
-    def initialize_upload(self, youtube, options):
-        tags = options.keywords.split(",") if options.keywords else []
-        game_name = self.gameInput.text()
-        if game_name and game_name not in tags:
-            tags.append(game_name)
-
-        publish_at = None
-        if self.publishTime.dateTime() > QtCore.QDateTime.currentDateTime():
-            publish_at = self.publishTime.dateTime().toString("yyyy-MM-ddThh:mm:ss+08:00")
-
-        body = {
-            "snippet": {
-                "title": options.title,
-                "description": options.description,
-                "tags": tags,
-                "categoryId": options.category_id,
-            },
-            "status": {
-                "privacyStatus": "private" if publish_at else options.privacy_status,
-                "publishAt": publish_at
-            }
-        }
-        insert_request = youtube.videos().insert(
-            part=",".join(body.keys()),
-            body=body,
-            media_body=MediaFileUpload(options.file, chunksize=-1, resumable=True)
+    def add_video(self):
+        """新增影片"""
+        dialog = VideoEditorDialog(parent=self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            video = dialog.get_video()
+            self.video_list.append(video)
+            self.refresh_video_table()
+    
+    def remove_video(self):
+        """移除選中的影片"""
+        current_row = self.video_table.currentRow()
+        if current_row < 0:
+            QtWidgets.QMessageBox.warning(self, "警告", "請先選擇要移除的影片！")
+            return
+        
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "確認",
+            "確定要移除這部影片嗎？",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
         )
-        return self.resumable_upload(insert_request)
-
-    def resumable_upload(self, insert_request):
-        response = None
-        error = None
-        retry = 0
-        while response is None:
-            try:
-                print("Uploading file...")
-                status, response = insert_request.next_chunk()
-                if response is not None:
-                    if 'id' in response:
-                        print("Video id '%s' was successfully uploaded." % response['id'])
-                        return response['id']
-                    else:
-                        exit("The upload failed with an unexpected response: %s" % response)
-            except HttpError as e:
-                if e.resp.status in RETRIABLE_STATUS_CODES:
-                    error = "A retriable HTTP error %d occurred:\n%s" % (e.resp.status, e.content)
-                else:
-                    raise
-            except RETRIABLE_EXCEPTIONS as e:
-                error = "A retriable error occurred: %s" % e
-
-            if error is not None:
-                print(error)
-                retry += 1
-                if retry > MAX_RETRIES:
-                    exit("No longer attempting to retry.")
-                max_sleep = 2 ** retry
-                sleep_seconds = random.random() * max_sleep
-                print("Sleeping %f seconds and then retrying..." % sleep_seconds)
-                time.sleep(sleep_seconds)
-
-    def set_thumbnail(self, youtube, video_id, thumbnail_path):
-        youtube.thumbnails().set(
-            videoId=video_id,
-            media_body=MediaFileUpload(thumbnail_path)
-        ).execute()
-        print("設置縮圖完成 Thumbnail set for video id '%s'." % video_id)
-
-    def add_video_to_playlist(self, youtube, video_id, playlist_ids):
-        for playlist_id in playlist_ids:
-            add_video_request = youtube.playlistItems().insert(
-                part="snippet",
-                body={
-                    'snippet': {
-                        'playlistId': playlist_id,
-                        'resourceId': {
-                            'kind': 'youtube#video',
-                            'videoId': video_id
-                        }
-                    }
-                }
-            ).execute()
-            print(f"添加至播放列表 Video id '{video_id}' has been added to playlist id '{playlist_id}'.")
-
-    def add_video_localizations(self, youtube, video_id, localizations):
-        video_response = youtube.videos().list(
-            part="snippet,localizations",
-            id=video_id
-        ).execute()
-
-        video = video_response['items'][0]
-        snippet = video['snippet']
-        existing_localizations = video.get('localizations', {})
-        snippet['defaultLanguage'] = "en"
-        existing_localizations.update(localizations)
-
-        youtube.videos().update(
-            part="snippet,localizations",
-            body=dict(
-                id=video_id,
-                snippet=snippet,
-                localizations=existing_localizations
+        
+        if reply == QtWidgets.QMessageBox.Yes:
+            del self.video_list[current_row]
+            self.refresh_video_table()
+    
+    def edit_video(self):
+        """編輯選中的影片"""
+        current_row = self.video_table.currentRow()
+        if current_row < 0:
+            QtWidgets.QMessageBox.warning(self, "警告", "請先選擇要編輯的影片！")
+            return
+        
+        video = self.video_list[current_row]
+        dialog = VideoEditorDialog(video=video, parent=self)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.refresh_video_table()
+    
+    def refresh_video_table(self):
+        """刷新影片列表表格"""
+        self.video_table.setRowCount(len(self.video_list))
+        
+        for row, video in enumerate(self.video_list):
+            # 序號
+            num_item = QtWidgets.QTableWidgetItem(str(row + 1))
+            num_item.setTextAlignment(QtCore.Qt.AlignCenter)
+            self.video_table.setItem(row, 0, num_item)
+            
+            # 標題
+            title_item = QtWidgets.QTableWidgetItem(video.title)
+            self.video_table.setItem(row, 1, title_item)
+            
+            # 對戰類型
+            match_type_item = QtWidgets.QTableWidgetItem(video.match_type_text)
+            match_type_item.setTextAlignment(QtCore.Qt.AlignCenter)
+            self.video_table.setItem(row, 2, match_type_item)
+            
+            # 發布時間
+            time_item = QtWidgets.QTableWidgetItem(video.publish_time_str)
+            time_item.setTextAlignment(QtCore.Qt.AlignCenter)
+            self.video_table.setItem(row, 3, time_item)
+            
+            # 狀態
+            status_item = QtWidgets.QTableWidgetItem(video.status_text)
+            status_item.setTextAlignment(QtCore.Qt.AlignCenter)
+            
+            # 根據狀態設定顏色
+            if video.status == UploadStatus.COMPLETED:
+                status_item.setForeground(QtGui.QColor("green"))
+            elif video.status == UploadStatus.FAILED:
+                status_item.setForeground(QtGui.QColor("red"))
+            elif video.status == UploadStatus.UPLOADING:
+                status_item.setForeground(QtGui.QColor("blue"))
+            
+            self.video_table.setItem(row, 4, status_item)
+            
+            # 操作按鈕（預留）
+            action_widget = QtWidgets.QWidget()
+            action_layout = QtWidgets.QHBoxLayout(action_widget)
+            action_layout.setContentsMargins(4, 2, 4, 2)
+            action_layout.setSpacing(4)
+            
+            # 可以在這裡加入單獨的操作按鈕
+            # 例如：查看詳情、重新上傳等
+            
+            self.video_table.setCellWidget(row, 5, action_widget)
+    
+    def start_batch_upload(self):
+        """開始批次上傳"""
+        if not self.video_list:
+            QtWidgets.QMessageBox.warning(self, "警告", "影片列表為空，請先新增影片！")
+            return
+        
+        # 檢查是否有待上傳的影片
+        pending_videos = [v for v in self.video_list if v.status == UploadStatus.PENDING]
+        if not pending_videos:
+            QtWidgets.QMessageBox.information(self, "提示", "沒有待上傳的影片！")
+            return
+        
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "確認",
+            f"即將上傳 {len(pending_videos)} 部影片，是否繼續？",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+        )
+        
+        if reply == QtWidgets.QMessageBox.Yes:
+            # TODO: 實作批次上傳邏輯（Phase 3）
+            QtWidgets.QMessageBox.information(
+                self,
+                "開發中",
+                "批次上傳功能將在 Phase 3 實作！\n目前僅完成 UI 和資料模型。"
             )
-        ).execute()
-        print(f"添加多國字幕 Updated video '{video_id}' with localizations: {localizations}")
-
-    def get_social_links(self):
-        paypal = 'Paypal斗內連結 \nhttps://www.paypal.com/paypalme/Sc2Nzs906?country.x=TW&locale.x=zh_TW'
-        opay = '歐富寶斗內連結 \nhttps://payment.opay.tw/Broadcaster/Donate/F7149E2B175ACA220EAD8B99E1F69EB8'
-        facebook = 'Facebook_粉絲團 \nhttps://www.facebook.com/profile.php?id=61550685848292'
-        instagram = 'Instagram粉絲團 \nhttps://www.instagram.com/sc2nzs906/'
-        thread = 'Thread粉絲團 \nhttps://www.threads.com/@sc2nzs906?xmt=AQGzwQoSE8s-7o1yAmyIpw_aDv1pe5Rj7ew0QsQQJiFPq_I'
-        youtube = '加入Nzs的頻道會員神族一起偉大 \nhttps://www.youtube.com/@Sc2Nzs906'
-        end_message = '記得幫我按讚訂閱開啟小鈴鐺\n感謝大家~~'
-        return f"{paypal}\n{opay}\n{facebook}\n{instagram}\n{thread}\n{youtube}\n{end_message}"
-
-    def upload(self):
-        try:
-            replay_file_path = self.tvReplayPath.text()
-            replay_url = UploadGoogleDrive.upload_replay(replay_file_path) if replay_file_path else ""
-
-            title = self.textEditTitle.toPlainText()
-            description = self.get_description(title = title,replay_url=replay_url,social_links=self.get_social_links())
-
-
-            args = UploadArgs(
-                file=self.tvFilePath.text(),
-                title=title,
-                thumbnail=self.tvImagePath.text(),
-                description=description,
-                category_id=category_id,
-                keywords=keyword,
-                privacy_status=VALID_PRIVACY_STATUSES[1]
-            )
-
-            youtube = self.get_authenticated_service()
-            video_id = self.initialize_upload(youtube, args)
-            print(f"Uploaded video with ID: {video_id}")
-
-            if args.thumbnail:
-                self.set_thumbnail(youtube, video_id, args.thumbnail)
-
-            ssl = self.get_authenticated_service_ssl()
-            self.add_video_to_playlist(ssl, video_id, self.get_add_playlist())
-            self.add_video_localizations(ssl, video_id, self.get_multi_language(replay_url,self.get_social_links()))
-
-            print("上傳完成")
-        except HttpError as e:
-            print(f"An HTTP error {e.resp.status} occurred:\n{e.content}")
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
 
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    Dialog = QtWidgets.QDialog()
-    ui = Ui_Dialog()
-    ui.setupUi(Dialog)
-    Dialog.show()
+    window = BatchUploadWindow()
+    window.show()
     sys.exit(app.exec_())

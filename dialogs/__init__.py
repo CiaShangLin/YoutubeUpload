@@ -3,5 +3,6 @@
 """
 
 from .token_status_dialog import TokenStatusDialog
+from .video_editor_dialog import VideoEditorDialog
 
-__all__ = ['TokenStatusDialog']
+__all__ = ['TokenStatusDialog', 'VideoEditorDialog']
