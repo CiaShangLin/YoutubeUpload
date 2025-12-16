@@ -15,6 +15,8 @@ from oauth2client.tools import run_flow
 
 import UploadGoogleDrive
 from UploadArgs import UploadArgs
+from token_manager import TokenManager
+from dialogs.token_status_dialog import TokenStatusDialog
 
 httplib2.RETRIES = 1
 MAX_RETRIES = 10
@@ -49,6 +51,14 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(740, 700)
+        
+        # 初始化 Token 管理器
+        self.token_manager = TokenManager()
+        
+        # Token 檢查按鈕（放在最上方）
+        self.btCheckToken = QtWidgets.QPushButton(Dialog)
+        self.btCheckToken.setGeometry(QtCore.QRect(620, 0, 120, 25))
+        self.btCheckToken.setObjectName("btCheckToken")
 
         self.tvFilePath = QtWidgets.QLabel(Dialog)
         self.tvFilePath.setGeometry(QtCore.QRect(120, 30, 601, 30))
@@ -146,6 +156,7 @@ class Ui_Dialog(object):
 
         self.retranslateUi(Dialog)
 
+        self.btCheckToken.clicked.connect(self.check_token_status)
         self.btOpenVideo.clicked.connect(self.open_video_file)
         self.btOpenImage.clicked.connect(self.open_image_file)
         self.btOpenReplay.clicked.connect(self.open_replay_file)
@@ -157,6 +168,7 @@ class Ui_Dialog(object):
         _translate = QtCore.QCoreApplication.translate
         Dialog.setWindowTitle(_translate("Dialog", "YoutubeUpload"))
         Dialog.setWindowIcon(QtGui.QIcon('icon.jpg'))
+        self.btCheckToken.setText(_translate("Dialog", "🔐 檢查 Token"))
         self.tvFilePath.setText(_translate("Dialog", "File Path"))
         self.btOpenVideo.setText(_translate("Dialog", "選擇檔案"))
         self.btOpenImage.setText(_translate("Dialog", "選擇縮圖"))
@@ -229,6 +241,11 @@ class Ui_Dialog(object):
         filePath, _ = QtWidgets.QFileDialog.getOpenFileName()
         if filePath:
             self.tvReplayPath.setText(filePath)
+    
+    def check_token_status(self):
+        """開啟 Token 狀態檢查對話框"""
+        dialog = TokenStatusDialog(self.token_manager)
+        dialog.exec_()
 
     def get_title(self, file_path):
         basename = os.path.basename(file_path)
