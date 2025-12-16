@@ -11,3 +11,29 @@ YoutubeUpload.rar
 token.pickle
 google_drive_client_secret.json
 google_drive_token.pickle
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Token files
+youtube_token.pickle
+google_drive_token.pickle
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
