@@ -7,6 +7,7 @@ from token_manager import TokenManager
 from video_item import VideoItem, UploadStatus
 from dialogs.token_status_dialog import TokenStatusDialog
 from dialogs.video_editor_dialog import VideoEditorDialog
+from uploaders.youtube_uploader import YouTubeUploader
 
 
 class BatchUploadWindow(QtWidgets.QMainWindow):
@@ -15,6 +16,7 @@ class BatchUploadWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         self.token_manager = TokenManager()
+        self.youtube_uploader = YouTubeUploader(self.token_manager)
         self.video_list: List[VideoItem] = []
         self.setupUi()
     
@@ -216,6 +218,7 @@ class BatchUploadWindow(QtWidgets.QMainWindow):
             
             self.video_table.setCellWidget(row, 5, action_widget)
     
+    
     def start_batch_upload(self):
         """開始批次上傳"""
         if not self.video_list:
@@ -236,12 +239,112 @@ class BatchUploadWindow(QtWidgets.QMainWindow):
         )
         
         if reply == QtWidgets.QMessageBox.Yes:
-            # TODO: 實作批次上傳邏輯（Phase 3）
-            QtWidgets.QMessageBox.information(
-                self,
-                "開發中",
-                "批次上傳功能將在 Phase 3 實作！\n目前僅完成 UI 和資料模型。"
-            )
+            self._execute_batch_upload(pending_videos)
+    
+    def _execute_batch_upload(self, videos: List[VideoItem]):
+        """
+        執行批次上傳
+        
+        Args:
+            videos: 待上傳的影片列表
+        """
+        # 禁用上傳按鈕
+        self.btStartUpload.setEnabled(False)
+        self.btAddVideo.setEnabled(False)
+        self.btRemoveVideo.setEnabled(False)
+        self.btEditVideo.setEnabled(False)
+        
+        # 顯示進度條
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setMaximum(len(videos))
+        self.progress_bar.setValue(0)
+        
+        total = len(videos)
+        success_count = 0
+        fail_count = 0
+        
+        for index, video in enumerate(videos, 1):
+            try:
+                # 更新進度
+                self.progress_label.setText(f"正在上傳 {index}/{total}: {video.title}")
+                self.progress_bar.setValue(index - 1)
+                QtWidgets.QApplication.processEvents()
+                
+                # 設定為上傳中
+                video.set_status(UploadStatus.UPLOADING)
+                self.refresh_video_table()
+                QtWidgets.QApplication.processEvents()
+                
+                # 1. 上傳影片
+                print(f"\n{'='*60}")
+                print(f"開始上傳第 {index}/{total} 部影片")
+                print(f"標題: {video.title}")
+                print(f"{'='*60}")
+                
+                video_id = self.youtube_uploader.upload(video)
+                video.set_video_id(video_id)
+                
+                # 2. 設定縮圖
+                if video.has_thumbnail:
+                    print(f"設定縮圖...")
+                    self.youtube_uploader.set_thumbnail(video_id, video.thumbnail_path)
+                
+                # 3. 加入播放清單
+                if video.playlist_ids:
+                    print(f"加入播放清單...")
+                    self.youtube_uploader.add_to_playlist(video_id, video.playlist_ids)
+                
+                # 4. 添加多國語言
+                print(f"添加多國語言...")
+                self.youtube_uploader.add_localizations(video_id, video.replay_url or "")
+                
+                # 設定為完成
+                video.set_status(UploadStatus.COMPLETED)
+                success_count += 1
+                
+                print(f"✅ 第 {index}/{total} 部影片上傳成功！")
+                
+            except Exception as e:
+                # 設定為失敗
+                error_msg = str(e)
+                video.set_status(UploadStatus.FAILED, error_msg)
+                fail_count += 1
+                
+                print(f"❌ 第 {index}/{total} 部影片上傳失敗: {error_msg}")
+                
+                # 詢問是否繼續
+                if index < total:
+                    reply = QtWidgets.QMessageBox.question(
+                        self,
+                        "上傳失敗",
+                        f"影片「{video.title}」上傳失敗：\n{error_msg}\n\n是否繼續上傳剩餘影片？",
+                        QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+                    )
+                    
+                    if reply == QtWidgets.QMessageBox.No:
+                        break
+            
+            finally:
+                # 刷新表格
+                self.refresh_video_table()
+                QtWidgets.QApplication.processEvents()
+        
+        # 完成
+        self.progress_bar.setValue(total)
+        self.progress_label.setText(f"上傳完成！成功: {success_count}, 失敗: {fail_count}")
+        
+        # 顯示結果
+        QtWidgets.QMessageBox.information(
+            self,
+            "批次上傳完成",
+            f"上傳完成！\n\n成功: {success_count} 部\n失敗: {fail_count} 部"
+        )
+        
+        # 恢復按鈕
+        self.btStartUpload.setEnabled(True)
+        self.btAddVideo.setEnabled(True)
+        self.btRemoveVideo.setEnabled(True)
+        self.btEditVideo.setEnabled(True)
 
 
 if __name__ == "__main__":
