@@ -1,60 +1,156 @@
-# Youtube Python 上傳器
+# 🎬 YouTube 批次上傳器
 
-### 開發需求
-自己有開了一個Youtube頻道,主要上傳自己玩星海爭霸2的天梯錄影,每天都會上傳一部,每次都需要重複興趣設置標題,描述這些欄位真的是偏煩,原本是想說用Flutter來寫但是我看Youtube Data Api v3沒有提供Dart版本的,所以使用python開發配合PyQt5來繪製GUI。
+基於 PyQt5 開發的 YouTube 影片批次上傳工具，專為 StarCraft II 遊戲影片設計，支援自動上傳 Replay 到 Google Drive、多國語言標題、預約發布等功能。
 
-### 功能
-- 設定標題
-- 設定描述
-- 設定縮圖
-- 設定指定播放清單
-- 設定分類
-- 設定多國語言標題和描述
+![Demo](demo.PNG)
 
-### 設定教學
-https://developers.google.com/youtube/v3/quickstart/python?hl=zh-tw#step_1_set_up_your_project_and_credentials
-1. 創立新專案
-2. 選擇API和服務
-3. 點選程式庫
-4. 搜尋YouTube Data API v3點擊開啟
-5. Youtube Data API相關的都勾選上
-6. 點擊憑證
-7. 建立憑證->OAuth2->選擇電腦版
-8. 下載json檔案,或是自己手動創立一下也可以
+## ✨ 功能特色
 
-### 上傳影片
-https://developers.google.com/youtube/v3/guides/uploading_a_video?hl=zh-tw
-建議下載別人寫的python3版本的,官方提供程式碼是python2
-https://github.com/davidrazmadzeExtra/YouTube_Python3_Upload_Video
-除了安裝套件之外還要設定client_secrets.json
-這個client_secrets.json就是設定第8點的json檔案,要複製自己填上client_id,client_secret也可以
+### 🚀 核心功能
+- **批次上傳**：一次上傳多部影片，自動處理佇列
+- **預約發布**：設定影片的發布時間
+- **自動縮圖**：上傳自訂縮圖
+- **播放清單**：自動加入指定的播放清單
+- **Replay 上傳**：自動上傳 SC2 Replay 檔案到 Google Drive 並在描述中附上連結
 
-### 特別說明
-官方的程式碼上傳影片的時候只能填入必填的欄位,像是縮圖,播放清單,多國語言只能等上傳完後再去修改
-要注意的是上傳跟修改的權限SCOPE是不同的,有一個權限的文檔但忘記在哪了
-YOUTUBE_UPLOAD_SCOPE = "https://www.googleapis.com/auth/youtube.upload"
-YOUTUBE_SSL_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl"
+### 🌍 多國語言支援
+- 自動生成英文、繁體中文、日文、韓文標題
+- 多語言描述自動翻譯種族名稱
 
-### 結論
-太久沒寫python了好不習慣,官方文檔都是基於API的,通時是取得Youtube的資料的比較多,
-像這種上傳用到API的情況比較少所以也比較難找得到對應的文檔,python套件本身的文檔
-也不適很好找,點進去本身的程式碼也幾乎沒有註解可看,不會像是Android這樣。
-程式碼本身幾乎都是用ChatGPT找的,連裁切標題有的沒的都是用AI產出,AI寫成是在一個小範圍的情況下
-基本上已經超越junior了。
+### 🔐 Token 管理
+- 統一管理 YouTube 和 Google Drive 的 OAuth Token
+- Token 過期自動刷新
+- 一鍵檢查 Token 狀態
 
-### 指令紀錄
-Qt Designer build to python
+## 📁 專案結構
 
-pyuic5 -x main.ui -o main.py
+```
+YoutubeUpload/
+├── main.py                 # 主程式入口
+├── token_manager.py        # OAuth Token 統一管理
+├── video_item.py           # 影片資料模型
+├── UploadGoogleDrive.py    # Google Drive 上傳
+├── dialogs/                # UI 對話框
+│   ├── token_status_dialog.py    # Token 狀態檢查對話框
+│   └── video_editor_dialog.py    # 影片編輯對話框
+├── uploaders/              # 上傳器模組
+│   ├── base_uploader.py          # 上傳器抽象基類
+│   ├── youtube_uploader.py       # YouTube 上傳實作
+│   └── bilibili_uploader.py      # B站上傳 (預留)
+└── requirements.txt        # 依賴套件
+```
 
-Pyinstall
+## 🛠️ 安裝
 
-pyinstaller --onefile --add-data "token.json;." --add-data "icon.jpg;." main.py
+### 1. 安裝依賴
 
-### Youtube頻道
-無聊可以訂閱一下 感謝~~
-[Youtube Sc2Nzs906](https://www.youtube.com/@Sc2Nzs906 "Youtube Sc2Nzs906")
+```bash
+pip install -r requirements.txt
+```
 
-### demo截圖
-[![DemoGUI](https://github.com/CiaShangLin/YoutubeUpload/blob/master/demo_gui.PNG "DemoGUI")](https://github.com/CiaShangLin/YoutubeUpload/blob/master/demo_gui.PNG "DemoGUI")
+### 2. 設定 Google Cloud Console
 
+1. 前往 [Google Cloud Console](https://console.cloud.google.com/)
+2. 建立新專案或選擇現有專案
+3. 啟用 **YouTube Data API v3** 和 **Google Drive API**
+4. 建立 OAuth 2.0 憑證，下載 JSON 檔案並命名為 `token.json`
+5. 將 `token.json` 放在專案根目錄
+
+### 3. 執行程式
+
+```bash
+python main.py
+```
+
+## 📦 打包為執行檔
+
+使用 PyInstaller 打包：
+
+```bash
+# 安裝 PyInstaller
+pip install pyinstaller
+
+# 打包成單一執行檔
+pyinstaller --onefile --windowed --icon=icon.jpg --name=YoutubeUploader main.py
+```
+
+打包後的執行檔在 `dist/YoutubeUploader.exe`
+
+> ⚠️ **注意**：執行 `.exe` 時需要將 Token 檔案放在同目錄下
+
+## 📋 使用說明
+
+### 1. 檢查 Token 狀態
+點擊右上角的「🔐 檢查 Token」按鈕，確認 YouTube 和 Google Drive 的認證狀態。
+
+### 2. 新增影片
+點擊「➕ 新增影片」，填寫：
+- 影片檔案路徑
+- 標題
+- 縮圖（可選）
+- Replay 檔案（可選）
+- 發布時間
+- 播放清單
+
+### 3. 開始上傳
+確認影片列表後，點擊「🚀 開始批次上傳」。
+
+## 🔧 播放清單設定
+
+在 `uploaders/youtube_uploader.py` 中的播放清單 ID 對應：
+
+| 對戰類型 | 播放清單 |
+|----------|----------|
+| PVP | SC2 神族內戰 |
+| PVZ | SC2 神族 vs 蟲族 |
+| PVT | SC2 神族 vs 人族 |
+
+## 📄 影片描述格式
+
+上傳的影片描述會自動包含：
+
+```
+#starcraft2 #星海爭霸2 #gaming
+【星海爭霸2】影片標題
+RP : https://drive.google.com/...
+
+Paypal斗內連結 
+https://www.paypal.com/paypalme/...
+歐富寶斗內連結 
+https://payment.opay.tw/...
+Facebook_粉絲團 
+https://www.facebook.com/...
+Instagram粉絲團 
+https://www.instagram.com/...
+Thread粉絲團 
+https://www.threads.com/...
+加入Nzs的頻道會員神族一起偉大 
+https://www.youtube.com/...
+記得幫我按讚訂閱開啟小鈴鐺
+感謝大家~~
+```
+
+## 📝 依賴套件
+
+```
+PyQt5>=5.15.0
+google-api-python-client>=2.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=0.5.0
+google-auth-httplib2>=0.1.0
+httplib2>=0.20.0
+oauth2client>=4.1.3
+```
+
+## 🤝 貢獻
+
+歡迎提交 Issue 和 Pull Request！
+
+## 📜 授權
+
+MIT License
+
+---
+
+> 開發者：[Cia Shang Lin](https://github.com/CiaShangLin)  
+> 專為 SC2 實況主設計 🎮
