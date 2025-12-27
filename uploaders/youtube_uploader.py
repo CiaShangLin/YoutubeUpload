@@ -73,7 +73,8 @@ class YouTubeUploader(BaseUploader):
                 # Replay 上傳失敗不影響影片上傳
         
         # 2. 準備影片描述
-        description = self._get_description(video.title, replay_url)
+        social_links = self._get_social_links()
+        description = self._get_description(video.title, replay_url, social_links)
         
         # 3. 取得 YouTube 憑證
         creds = self.token_manager.get_youtube_credentials()
