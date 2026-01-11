@@ -37,3 +37,10 @@ google_drive_token.pickle
 # OS
 .DS_Store
 Thumbs.db
+
+# Nuitka
+*.exe
+*.build/
+*.dist/
+*.onefile-build/
+nuitka-crash-report.xml

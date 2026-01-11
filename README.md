@@ -64,7 +64,21 @@ python main.py
 
 ## 📦 打包為執行檔
 
-使用 PyInstaller 打包：
+### 方法一：Nuitka（推薦）
+
+Nuitka 將 Python 編譯成 C，較不易被 Windows Defender 誤報：
+
+```bash
+# 安裝 Nuitka
+pip install nuitka
+
+# 打包成單一執行檔
+python -m nuitka --standalone --onefile --enable-plugin=pyqt5 --output-filename=YoutubeUploader.exe main.py
+```
+
+打包後的執行檔在專案根目錄 `YoutubeUploader.exe`
+
+### 方法二：PyInstaller
 
 ```bash
 # 安裝 PyInstaller
@@ -75,6 +89,8 @@ pyinstaller --onefile --windowed --icon=icon.jpg --name=YoutubeUploader main.py
 ```
 
 打包後的執行檔在 `dist/YoutubeUploader.exe`
+
+> ⚠️ **注意**：PyInstaller 打包的 `.exe` 可能被 Windows Defender 誤報為病毒
 
 > ⚠️ **注意**：執行 `.exe` 時需要將 Token 檔案放在同目錄下
 
