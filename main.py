@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from typing import List
@@ -333,6 +334,10 @@ class BatchUploadWindow(QtWidgets.QMainWindow):
         self.progress_bar.setValue(total)
         self.progress_label.setText(f"上傳完成！成功: {success_count}, 失敗: {fail_count}")
         
+        # 生成上傳報告 JSON
+        if success_count > 0:
+            self._generate_upload_report(videos)
+        
         # 顯示結果
         QtWidgets.QMessageBox.information(
             self,
@@ -345,6 +350,64 @@ class BatchUploadWindow(QtWidgets.QMainWindow):
         self.btAddVideo.setEnabled(True)
         self.btRemoveVideo.setEnabled(True)
         self.btEditVideo.setEnabled(True)
+    
+    def _generate_upload_report(self, videos: List[VideoItem]):
+        """
+        生成上傳結果 JSON 報告
+        
+        Args:
+            videos: 上傳的影片列表
+        """
+        # 只包含上傳成功的影片
+        completed_videos = [v for v in videos if v.status == UploadStatus.COMPLETED]
+        
+        if not completed_videos:
+            return
+        
+        # 生成佇列資料
+        queue_data = {
+            "queue": [video.to_queue_dict() for video in completed_videos]
+        }
+        
+        # 輸出到控制台
+        print("\n" + "="*60)
+        print("📋 上傳結果 JSON 報告")
+        print("="*60)
+        json_output = json.dumps(queue_data, indent=2, ensure_ascii=False)
+        print(json_output)
+        print("="*60 + "\n")
+        
+        # 詢問是否儲存到檔案
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "儲存報告",
+            "是否將上傳結果儲存為 JSON 檔案？",
+            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
+        )
+        
+        if reply == QtWidgets.QMessageBox.Yes:
+            file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+                self,
+                "儲存上傳報告",
+                "upload_report.json",
+                "JSON 檔案 (*.json)"
+            )
+            
+            if file_path:
+                try:
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        json.dump(queue_data, f, indent=2, ensure_ascii=False)
+                    QtWidgets.QMessageBox.information(
+                        self,
+                        "成功",
+                        f"報告已儲存至：\n{file_path}"
+                    )
+                except Exception as e:
+                    QtWidgets.QMessageBox.critical(
+                        self,
+                        "錯誤",
+                        f"儲存失敗：{str(e)}"
+                    )
 
 
 if __name__ == "__main__":

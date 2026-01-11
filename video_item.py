@@ -132,6 +132,33 @@ class VideoItem:
         """
         self.replay_url = replay_url
     
+    def to_queue_dict(self) -> dict:
+        """
+        轉換為上傳佇列格式（用於生成 post_queue.json）
+        
+        Returns:
+            dict: 包含 title, youtube_url, image_path, scheduled_date, processed 的字典
+        """
+        import os
+        
+        # 取得縮圖檔名（只保留檔案名稱，例如 "56.jpg"）
+        image_path = ""
+        if self.thumbnail_path:
+            image_path = os.path.basename(self.thumbnail_path)
+        
+        # scheduled_date 格式為 YYYY-MM-DD
+        scheduled_date = ""
+        if self.publish_time:
+            scheduled_date = self.publish_time.strftime("%Y-%m-%d")
+        
+        return {
+            'title': self.title,
+            'youtube_url': f"https://youtu.be/{self.video_id}" if self.video_id else "",
+            'image_path': image_path,
+            'scheduled_date': scheduled_date,
+            'processed': False
+        }
+    
     def to_dict(self) -> dict:
         """
         轉換為字典格式（用於序列化）
