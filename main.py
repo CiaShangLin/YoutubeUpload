@@ -25,7 +25,7 @@ class BatchUploadWindow(QtWidgets.QMainWindow):
         """設置 UI"""
         self.setObjectName("BatchUploadWindow")
         self.setWindowTitle("YouTube 批次上傳器")
-        self.setWindowIcon(QtGui.QIcon('icon.jpg'))
+        self.setWindowIcon(QtGui.QIcon('assets/icon.jpg'))
         self.resize(900, 600)
         
         # 中央 Widget
