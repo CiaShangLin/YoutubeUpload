@@ -14,7 +14,7 @@ from googleapiclient.http import MediaFileUpload
 from uploaders.base_uploader import BaseUploader
 from video_item import VideoItem
 from token_manager import TokenManager
-import UploadGoogleDrive
+from services import google_drive
 
 
 # 重試設定
@@ -65,7 +65,7 @@ class YouTubeUploader(BaseUploader):
         if video.has_replay:
             try:
                 print(f"上傳 Replay: {video.replay_path}")
-                replay_url = UploadGoogleDrive.upload_replay(video.replay_path)
+                replay_url = google_drive.upload_replay(video.replay_path)
                 video.set_replay_url(replay_url)
                 print(f"Replay URL: {replay_url}")
             except Exception as e:
