@@ -56,7 +56,11 @@ YoutubeUpload/
 ├── token_manager.py           # Token 統一管理
 ├── video_item.py              # 影片資料模型
 ├── upload_manager.py          # 批次上傳管理
-├── UploadGoogleDrive.py       # Google Drive 上傳
+├── assets/                    # 靜態資源 (icon, demo)
+├── scripts/                   # 打包設定
+│   └── YoutubeUploader.spec
+├── services/                  # 外部服務整合
+│   └── google_drive.py        # Google Drive 上傳
 ├── UploadArgs.py              # 上傳參數類別
 ├── dialogs/                   # 對話框模組
 │   ├── __init__.py
