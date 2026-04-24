@@ -231,37 +231,3 @@ class VideoItem:
             error_message=data.get('error_message'),
             replay_url=data.get('replay_url')
         )
-
-
-if __name__ == '__main__':
-    # 測試用程式碼
-    import json
-    
-    # 創建測試影片
-    video = VideoItem(
-        video_path="/path/to/video.mp4",
-        title="【StarCraft II】Nzs (Protoss) vs Opponent (Zerg) - KR Server",
-        thumbnail_path="/path/to/thumbnail.jpg",
-        replay_path="/path/to/replay.SC2Replay",
-        match_type=MatchType.PVZ,
-        playlist_ids=["playlist1", "playlist2"]
-    )
-    
-    print("=== VideoItem 測試 ===")
-    print(f"標題: {video.title}")
-    print(f"對戰類型: {video.match_type_text}")
-    print(f"發布時間: {video.publish_time_str}")
-    print(f"狀態: {video.status_text}")
-    print(f"有縮圖: {video.has_thumbnail}")
-    print(f"有 Replay: {video.has_replay}")
-    
-    # 測試序列化
-    print("\n=== 序列化測試 ===")
-    data = video.to_dict()
-    print(json.dumps(data, indent=2, ensure_ascii=False))
-    
-    # 測試反序列化
-    print("\n=== 反序列化測試 ===")
-    video2 = VideoItem.from_dict(data)
-    print(f"標題: {video2.title}")
-    print(f"對戰類型: {video2.match_type_text}")

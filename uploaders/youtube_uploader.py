@@ -382,8 +382,3 @@ class YouTubeUploader(BaseUploader):
         end_message = '記得幫我按讚訂閱開啟小鈴鐺\n感謝大家~~'
         
         return f"{paypal}\n{opay}\n{facebook}\n{instagram}\n{thread}\n{youtube}\n{end_message}"
-
-
-if __name__ == '__main__':
-    print("YouTubeUploader 需要配合 TokenManager 使用")
-    print("請參考 main.py 中的使用範例")

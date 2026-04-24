@@ -70,8 +70,3 @@ class BaseUploader(ABC):
         if not video.title:
             return False
         return True
-
-
-if __name__ == '__main__':
-    print("BaseUploader 是抽象基類，不能直接實例化")
-    print("請使用 YouTubeUploader 或 BilibiliUploader")

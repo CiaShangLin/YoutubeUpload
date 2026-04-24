@@ -307,16 +307,3 @@ class TokenManager:
                 pickle.dump(creds, token)
         except Exception as e:
             print(f"儲存 {token_file} 失敗: {str(e)}")
-
-
-if __name__ == '__main__':
-    # 測試用程式碼
-    manager = TokenManager()
-    statuses = manager.check_all_tokens()
-    
-    print("=== Token 狀態檢查 ===")
-    for name, status in statuses.items():
-        print(f"\n{name}:")
-        print(f"  {status.status_text}")
-        if status.error_message:
-            print(f"  錯誤: {status.error_message}")

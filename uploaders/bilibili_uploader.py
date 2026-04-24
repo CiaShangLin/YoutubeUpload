@@ -61,8 +61,3 @@ class BilibiliUploader(BaseUploader):
             NotImplementedError: 功能尚未實作
         """
         raise NotImplementedError("B站上傳功能尚未實作")
-
-
-if __name__ == '__main__':
-    print("BilibiliUploader 是預留介面，尚未實作")
-    print("未來可以在這裡實作 B站上傳功能")
