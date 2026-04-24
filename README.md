@@ -2,7 +2,7 @@
 
 基於 PyQt5 開發的 YouTube 影片批次上傳工具，專為 StarCraft II 遊戲影片設計，支援自動上傳 Replay 到 Google Drive、多國語言標題、預約發布等功能。
 
-![Demo](demo.PNG)
+![Demo](assets/demo.PNG)
 
 ## ✨ 功能特色
 
@@ -29,7 +29,11 @@ YoutubeUpload/
 ├── main.py                 # 主程式入口
 ├── token_manager.py        # OAuth Token 統一管理
 ├── video_item.py           # 影片資料模型
-├── UploadGoogleDrive.py    # Google Drive 上傳
+├── assets/                 # 靜態資源 (icon, demo)
+├── scripts/                # 打包設定
+│   └── YoutubeUploader.spec
+├── services/               # 外部服務整合
+│   └── google_drive.py     # Google Drive 上傳
 ├── dialogs/                # UI 對話框
 │   ├── token_status_dialog.py    # Token 狀態檢查對話框
 │   └── video_editor_dialog.py    # 影片編輯對話框
@@ -85,7 +89,7 @@ python -m nuitka --standalone --onefile --enable-plugin=pyqt5 --output-filename=
 pip install pyinstaller
 
 # 打包成單一執行檔
-pyinstaller --onefile --windowed --icon=icon.jpg --name=YoutubeUploader main.py
+pyinstaller scripts/YoutubeUploader.spec
 ```
 
 打包後的執行檔在 `dist/YoutubeUploader.exe`
