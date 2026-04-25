@@ -3,6 +3,8 @@ Token 狀態檢查對話框
 顯示所有 Token 的過期狀態，並提供重新認證功能
 """
 
+import json
+
 from PyQt5 import QtCore, QtWidgets, QtGui
 from token_manager import TokenManager, TokenStatus
 
@@ -224,10 +226,9 @@ class TokenStatusDialog(QtWidgets.QDialog):
             json_text: 使用者輸入的 JSON 文字
             dialog: 輸入對話框（成功後關閉）
         """
-        import json
         try:
             cookies = json.loads(json_text.strip())
-        except Exception:
+        except json.JSONDecodeError:
             QtWidgets.QMessageBox.warning(self, "格式錯誤", "請輸入有效的 JSON 格式。")
             return
 
