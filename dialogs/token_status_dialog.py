@@ -73,24 +73,22 @@ class TokenStatusDialog(QtWidgets.QDialog):
     
     def check_tokens(self):
         """檢查所有 Token 狀態"""
-        # 清除現有狀態顯示
         self.clear_status_widgets()
-        
-        # 顯示載入中
+
         loading_label = QtWidgets.QLabel("檢查中...")
         self.status_layout.addWidget(loading_label)
         QtWidgets.QApplication.processEvents()
-        
-        # 執行檢查
+
         statuses = self.token_manager.check_all_tokens()
-        
-        # 移除載入中標籤
+        is_bilibili_ok = self.token_manager.is_bilibili_logged_in()
+
         self.status_layout.removeWidget(loading_label)
         loading_label.deleteLater()
-        
-        # 顯示結果
+
         for name, status in statuses.items():
             self.add_token_status_widget(name, status)
+
+        self._add_bilibili_status_widget(is_bilibili_ok)
     
     def clear_status_widgets(self):
         """清除所有狀態顯示元件"""
@@ -153,7 +151,102 @@ class TokenStatusDialog(QtWidgets.QDialog):
         container_layout.addLayout(button_layout)
         
         self.status_layout.addWidget(container)
-    
+
+    def _add_bilibili_status_widget(self, is_logged_in: bool):
+        """
+        新增 B站 Cookie 狀態顯示元件
+
+        Args:
+            is_logged_in: Cookie 是否有效
+        """
+        container = QtWidgets.QGroupBox("B站 Cookie")
+        container_layout = QtWidgets.QVBoxLayout(container)
+
+        if is_logged_in:
+            status_label = QtWidgets.QLabel("✅ 已設定")
+            status_label.setStyleSheet("color: green; font-size: 11pt;")
+        else:
+            status_label = QtWidgets.QLabel("❌ 未設定")
+            status_label.setStyleSheet("color: red; font-size: 11pt;")
+        container_layout.addWidget(status_label)
+
+        button_layout = QtWidgets.QHBoxLayout()
+        btn_text = "🔄 重新設定" if is_logged_in else "🔐 設定 Cookie"
+        cookie_btn = QtWidgets.QPushButton(btn_text)
+        cookie_btn.clicked.connect(self._open_bilibili_cookie_dialog)
+        button_layout.addWidget(cookie_btn)
+        button_layout.addStretch()
+        container_layout.addLayout(button_layout)
+
+        self.status_layout.addWidget(container)
+
+    def _open_bilibili_cookie_dialog(self):
+        """開啟 B站 Cookie 輸入對話框"""
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle("設定 B站 Cookie")
+        dialog.resize(500, 320)
+        layout = QtWidgets.QVBoxLayout(dialog)
+
+        instruction = QtWidgets.QLabel(
+            "請貼上 B站 Cookie JSON（需包含 SESSDATA, bili_jct, DedeUserID, DedeUserID__ckMd5）："
+        )
+        instruction.setWordWrap(True)
+        layout.addWidget(instruction)
+
+        text_edit = QtWidgets.QPlainTextEdit()
+        text_edit.setPlaceholderText(
+            '{\n'
+            '  "SESSDATA": "your_sessdata",\n'
+            '  "bili_jct": "your_bili_jct",\n'
+            '  "DedeUserID": "your_uid",\n'
+            '  "DedeUserID__ckMd5": "your_ckmd5"\n'
+            '}'
+        )
+        layout.addWidget(text_edit)
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        btn_layout.addStretch()
+        cancel_btn = QtWidgets.QPushButton("取消")
+        cancel_btn.clicked.connect(dialog.reject)
+        save_btn = QtWidgets.QPushButton("儲存")
+        save_btn.clicked.connect(lambda: self._save_bilibili_cookie(text_edit.toPlainText(), dialog))
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(save_btn)
+        layout.addLayout(btn_layout)
+
+        dialog.exec_()
+
+    def _save_bilibili_cookie(self, json_text: str, dialog: QtWidgets.QDialog):
+        """
+        驗證並儲存 B站 Cookie
+
+        Args:
+            json_text: 使用者輸入的 JSON 文字
+            dialog: 輸入對話框（成功後關閉）
+        """
+        import json
+        try:
+            cookies = json.loads(json_text.strip())
+        except Exception:
+            QtWidgets.QMessageBox.warning(self, "格式錯誤", "請輸入有效的 JSON 格式。")
+            return
+
+        required = self.token_manager.BILIBILI_REQUIRED_FIELDS
+        missing = [f for f in required if f not in cookies]
+        if missing:
+            QtWidgets.QMessageBox.warning(
+                self, "欄位缺少",
+                f"Cookie 缺少必要欄位：{', '.join(missing)}"
+            )
+            return
+
+        if self.token_manager.save_bilibili_cookies(cookies):
+            QtWidgets.QMessageBox.information(self, "成功", "B站 Cookie 已儲存！")
+            dialog.accept()
+            self.check_tokens()
+        else:
+            QtWidgets.QMessageBox.critical(self, "錯誤", "儲存失敗，請檢查檔案權限。")
+
     def refresh_token(self, token_type: str):
         """
         刷新指定的 Token
