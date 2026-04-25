@@ -66,6 +66,79 @@ def test_from_dict_restores_bilibili_fields():
     assert v.bilibili_video_id == "BV1abc"
 
 
+import json
+import tempfile
+from unittest.mock import patch
+from token_manager import TokenManager
+
+
+def test_is_bilibili_logged_in_missing_file():
+    """Cookie 檔案不存在時回傳 False"""
+    tm = TokenManager()
+    with patch.object(tm, 'BILIBILI_COOKIE_FILE', '/nonexistent/path.json'):
+        assert tm.is_bilibili_logged_in() == False
+
+
+def test_is_bilibili_logged_in_valid():
+    """Cookie 檔案存在且欄位完整時回傳 True"""
+    tm = TokenManager()
+    cookies = {
+        'SESSDATA': 'abc',
+        'bili_jct': 'def',
+        'DedeUserID': '123',
+        'DedeUserID__ckMd5': 'ghi'
+    }
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(cookies, f)
+        tmp_path = f.name
+    try:
+        with patch.object(tm, 'BILIBILI_COOKIE_FILE', tmp_path):
+            assert tm.is_bilibili_logged_in() == True
+    finally:
+        os.unlink(tmp_path)
+
+
+def test_is_bilibili_logged_in_missing_field():
+    """Cookie 缺少必要欄位時回傳 False"""
+    tm = TokenManager()
+    cookies = {'SESSDATA': 'abc'}  # 缺少其他欄位
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(cookies, f)
+        tmp_path = f.name
+    try:
+        with patch.object(tm, 'BILIBILI_COOKIE_FILE', tmp_path):
+            assert tm.is_bilibili_logged_in() == False
+    finally:
+        os.unlink(tmp_path)
+
+
+def test_get_bilibili_cookies_returns_dict():
+    """get_bilibili_cookies() 應回傳 Cookie dict"""
+    tm = TokenManager()
+    cookies = {
+        'SESSDATA': 'abc',
+        'bili_jct': 'def',
+        'DedeUserID': '123',
+        'DedeUserID__ckMd5': 'ghi'
+    }
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(cookies, f)
+        tmp_path = f.name
+    try:
+        with patch.object(tm, 'BILIBILI_COOKIE_FILE', tmp_path):
+            result = tm.get_bilibili_cookies()
+        assert result == cookies
+    finally:
+        os.unlink(tmp_path)
+
+
+def test_get_bilibili_cookies_missing_file():
+    """檔案不存在時回傳 None"""
+    tm = TokenManager()
+    with patch.object(tm, 'BILIBILI_COOKIE_FILE', '/nonexistent/path.json'):
+        assert tm.get_bilibili_cookies() is None
+
+
 if __name__ == '__main__':
     test_bilibili_defaults()
     test_get_bilibili_dtime_future()
@@ -73,4 +146,9 @@ if __name__ == '__main__':
     test_get_bilibili_dtime_none()
     test_to_dict_includes_bilibili_fields()
     test_from_dict_restores_bilibili_fields()
+    test_is_bilibili_logged_in_missing_file()
+    test_is_bilibili_logged_in_valid()
+    test_is_bilibili_logged_in_missing_field()
+    test_get_bilibili_cookies_returns_dict()
+    test_get_bilibili_cookies_missing_file()
     print("All tests passed!")

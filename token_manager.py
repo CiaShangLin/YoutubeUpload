@@ -3,6 +3,7 @@ Token 管理器 - 統一管理所有 OAuth Token
 支援 YouTube 和 Google Drive 的認證管理
 """
 
+import json
 import os
 import pickle
 from datetime import datetime
@@ -39,6 +40,8 @@ class TokenManager:
     YOUTUBE_TOKEN_FILE = "youtube_token.pickle"
     GOOGLE_DRIVE_TOKEN_FILE = "google_drive_token.pickle"
     CLIENT_SECRETS_FILE = "token.json"
+    BILIBILI_COOKIE_FILE = "bilibili_cookie.json"
+    BILIBILI_REQUIRED_FIELDS = ["SESSDATA", "bili_jct", "DedeUserID", "DedeUserID__ckMd5"]
     
     # OAuth Scopes
     YOUTUBE_SCOPES = [
@@ -272,6 +275,52 @@ class TokenManager:
         self._google_drive_creds = creds
         return creds
     
+    def get_bilibili_cookies(self) -> Optional[dict]:
+        """
+        讀取 B站 Cookie 設定
+
+        Returns:
+            dict: Cookie 字典，檔案不存在時回傳 None
+        """
+        if not os.path.exists(self.BILIBILI_COOKIE_FILE):
+            return None
+        try:
+            with open(self.BILIBILI_COOKIE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"讀取 {self.BILIBILI_COOKIE_FILE} 失敗: {str(e)}")
+            return None
+
+    def is_bilibili_logged_in(self) -> bool:
+        """
+        檢查 B站 Cookie 是否存在且包含必要欄位
+
+        Returns:
+            bool: Cookie 是否有效
+        """
+        cookies = self.get_bilibili_cookies()
+        if not cookies:
+            return False
+        return all(field in cookies for field in self.BILIBILI_REQUIRED_FIELDS)
+
+    def save_bilibili_cookies(self, cookies: dict) -> bool:
+        """
+        儲存 B站 Cookie 到檔案
+
+        Args:
+            cookies: Cookie 字典
+
+        Returns:
+            bool: 是否成功
+        """
+        try:
+            with open(self.BILIBILI_COOKIE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(cookies, f, indent=2, ensure_ascii=False)
+            return True
+        except Exception as e:
+            print(f"儲存 {self.BILIBILI_COOKIE_FILE} 失敗: {str(e)}")
+            return False
+
     def _load_credentials(self, token_file: str, scopes: list) -> Optional[Credentials]:
         """
         從檔案載入憑證
