@@ -145,6 +145,31 @@ class VideoEditorDialog(QtWidgets.QDialog):
         
         main_layout.addWidget(title_group)
         
+        # === B站 投稿區 ===
+        bilibili_group = QtWidgets.QGroupBox("B站 投稿")
+        bilibili_layout = QtWidgets.QVBoxLayout(bilibili_group)
+
+        self.ckbBilibili = QtWidgets.QCheckBox("同步上傳到 B站")
+        self.ckbBilibili.stateChanged.connect(self._on_bilibili_checked)
+        bilibili_layout.addWidget(self.ckbBilibili)
+
+        self.bilibiliTimeWidget = QtWidgets.QWidget()
+        bilibili_time_layout = QtWidgets.QHBoxLayout(self.bilibiliTimeWidget)
+        bilibili_time_layout.setContentsMargins(0, 0, 0, 0)
+        bilibili_time_label = QtWidgets.QLabel("B站發布時間:")
+        self.dtBilibiliPublish = QtWidgets.QDateTimeEdit()
+        self.dtBilibiliPublish.setCalendarPopup(True)
+        self.dtBilibiliPublish.setDateTime(
+            QtCore.QDateTime(QtCore.QDate.currentDate(), QtCore.QTime(19, 0))
+        )
+        bilibili_time_layout.addWidget(bilibili_time_label)
+        bilibili_time_layout.addWidget(self.dtBilibiliPublish)
+        bilibili_time_layout.addStretch()
+        self.bilibiliTimeWidget.setVisible(False)
+        bilibili_layout.addWidget(self.bilibiliTimeWidget)
+
+        main_layout.addWidget(bilibili_group)
+
         # === 按鈕區 ===
         button_layout = QtWidgets.QHBoxLayout()
         button_layout.addStretch()
@@ -159,6 +184,22 @@ class VideoEditorDialog(QtWidgets.QDialog):
         
         main_layout.addLayout(button_layout)
     
+    def _on_bilibili_checked(self, state: int):
+        """
+        B站 勾選框狀態變更時，顯示/隱藏發布時間，並同步預設時間
+
+        Args:
+            state: Qt.Checked 或 Qt.Unchecked
+        """
+        is_checked = state == QtCore.Qt.Checked
+        self.bilibiliTimeWidget.setVisible(is_checked)
+
+        if is_checked:
+            # 預設為 YouTube 發布時間 + 1 小時
+            yt_dt = self.publishTime.dateTime()
+            bilibili_dt = yt_dt.addSecs(3600)
+            self.dtBilibiliPublish.setDateTime(bilibili_dt)
+
     def select_video_file(self):
         """選擇影片檔案"""
         file_path, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -304,7 +345,17 @@ class VideoEditorDialog(QtWidgets.QDialog):
         
         # 標題
         self.textEditTitle.setPlainText(self.video.title)
-    
+
+        # B站 投稿
+        if self.video.upload_to_bilibili:
+            self.ckbBilibili.setChecked(True)
+            if self.video.bilibili_publish_time:
+                qt_bilibili_dt = QtCore.QDateTime.fromString(
+                    self.video.bilibili_publish_time.strftime("%Y-%m-%d %H:%M"),
+                    "yyyy-MM-dd HH:mm"
+                )
+                self.dtBilibiliPublish.setDateTime(qt_bilibili_dt)
+
     def confirm(self):
         """確認並返回影片資料"""
         # 驗證必填欄位
@@ -354,7 +405,19 @@ class VideoEditorDialog(QtWidgets.QDialog):
             qt_datetime.time().hour(),
             qt_datetime.time().minute()
         )
-        
+
+        # 解析 B站 發布時間
+        bilibili_publish_time = None
+        if self.ckbBilibili.isChecked():
+            qt_bilibili = self.dtBilibiliPublish.dateTime()
+            bilibili_publish_time = datetime(
+                qt_bilibili.date().year(),
+                qt_bilibili.date().month(),
+                qt_bilibili.date().day(),
+                qt_bilibili.time().hour(),
+                qt_bilibili.time().minute()
+            )
+
         # 創建或更新 VideoItem
         thumbnail_path = self.tvThumbnailPath.text() if self.tvThumbnailPath.text() != "未選擇" else None
         replay_path = self.tvReplayPath.text() if self.tvReplayPath.text() != "未選擇" else None
@@ -370,6 +433,8 @@ class VideoEditorDialog(QtWidgets.QDialog):
             self.video.playlist_ids = playlist_ids
             self.video.subtitle_languages = subtitle_languages
             self.video.match_type = match_type
+            self.video.upload_to_bilibili = self.ckbBilibili.isChecked()
+            self.video.bilibili_publish_time = bilibili_publish_time
         else:
             # 新增模式：創建新影片
             self.video = VideoItem(
@@ -381,7 +446,9 @@ class VideoEditorDialog(QtWidgets.QDialog):
                 publish_time=publish_time,
                 playlist_ids=playlist_ids,
                 subtitle_languages=subtitle_languages,
-                match_type=match_type
+                match_type=match_type,
+                upload_to_bilibili=self.ckbBilibili.isChecked(),
+                bilibili_publish_time=bilibili_publish_time,
             )
         
         self.accept()
