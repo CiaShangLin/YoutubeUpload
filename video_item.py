@@ -66,7 +66,12 @@ class VideoItem:
     
     # Replay 上傳後的 URL
     replay_url: Optional[str] = None
-    
+
+    # B站 專屬欄位
+    upload_to_bilibili: bool = False
+    bilibili_publish_time: Optional[datetime] = None
+    bilibili_video_id: Optional[str] = None
+
     def __post_init__(self):
         """初始化後處理"""
         # 如果沒有設定發布時間，預設為當天 18:00
@@ -126,12 +131,24 @@ class VideoItem:
     def set_replay_url(self, replay_url: str):
         """
         設定 Replay 檔案的 URL
-        
+
         Args:
             replay_url: Google Drive 分享連結
         """
         self.replay_url = replay_url
-    
+
+    def get_bilibili_dtime(self) -> int:
+        """
+        計算 B站 發布延遲秒數
+
+        Returns:
+            int: 從現在起算的秒數，0 表示立即發布
+        """
+        if self.bilibili_publish_time is None:
+            return 0
+        delta = self.bilibili_publish_time - datetime.now()
+        return max(0, int(delta.total_seconds()))
+
     def to_queue_dict(self) -> dict:
         """
         轉換為上傳佇列格式（用於生成 post_queue.json）
@@ -180,7 +197,10 @@ class VideoItem:
             'status': self.status.value,
             'video_id': self.video_id,
             'error_message': self.error_message,
-            'replay_url': self.replay_url
+            'replay_url': self.replay_url,
+            'upload_to_bilibili': self.upload_to_bilibili,
+            'bilibili_publish_time': self.bilibili_publish_time.isoformat() if self.bilibili_publish_time else None,
+            'bilibili_video_id': self.bilibili_video_id,
         }
     
     @classmethod
@@ -199,6 +219,11 @@ class VideoItem:
         if data.get('publish_time'):
             publish_time = datetime.fromisoformat(data['publish_time'])
         
+        # 轉換 B站 發布時間
+        bilibili_publish_time = None
+        if data.get('bilibili_publish_time'):
+            bilibili_publish_time = datetime.fromisoformat(data['bilibili_publish_time'])
+
         # 轉換對戰類型
         match_type = MatchType.UNKNOWN
         if data.get('match_type'):
@@ -229,5 +254,8 @@ class VideoItem:
             status=status,
             video_id=data.get('video_id'),
             error_message=data.get('error_message'),
-            replay_url=data.get('replay_url')
+            replay_url=data.get('replay_url'),
+            upload_to_bilibili=data.get('upload_to_bilibili', False),
+            bilibili_publish_time=bilibili_publish_time,
+            bilibili_video_id=data.get('bilibili_video_id'),
         )
