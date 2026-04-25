@@ -9,6 +9,7 @@ from video_item import VideoItem, UploadStatus
 from dialogs.token_status_dialog import TokenStatusDialog
 from dialogs.video_editor_dialog import VideoEditorDialog
 from uploaders.youtube_uploader import YouTubeUploader
+from uploaders.bilibili_uploader import BilibiliUploader
 
 
 class BatchUploadWindow(QtWidgets.QMainWindow):
@@ -299,6 +300,22 @@ class BatchUploadWindow(QtWidgets.QMainWindow):
                 print(f"添加多國語言...")
                 self.youtube_uploader.add_localizations(video_id, video.replay_url or "")
                 
+                # 5. 同步上傳 B站
+                if video.upload_to_bilibili:
+                    print(f"同步上傳 B站...")
+                    try:
+                        bilibili_uploader = BilibiliUploader(self.token_manager)
+                        bvid = bilibili_uploader.upload(video)
+                        video.bilibili_video_id = bvid
+                        print(f"✅ B站上傳成功！BVID: {bvid}")
+                    except Exception as bilibili_err:
+                        print(f"⚠️ B站上傳失敗: {bilibili_err}")
+                        QtWidgets.QMessageBox.warning(
+                            self,
+                            "B站上傳失敗",
+                            f"YouTube 上傳成功，但 B站上傳失敗：\n{bilibili_err}"
+                        )
+
                 # 設定為完成
                 video.set_status(UploadStatus.COMPLETED)
                 success_count += 1
