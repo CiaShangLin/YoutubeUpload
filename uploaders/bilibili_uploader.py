@@ -5,10 +5,12 @@ B站上傳器
 
 import os
 import logging
+import time
 from typing import List
 
 from uploaders.base_uploader import BaseUploader
 from video_item import VideoItem
+from token_manager import TokenManager
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,7 @@ class BilibiliUploader(BaseUploader):
     進行身分驗證後上傳影片到 Bilibili。
     """
 
-    def __init__(self, token_manager):
+    def __init__(self, token_manager: TokenManager):
         """
         初始化 B站上傳器
 
@@ -127,7 +129,6 @@ class BilibiliUploader(BaseUploader):
         # 設定延遲發布（dtime 需大於提交時間 2 小時以上，biliup 會自動驗證）
         dtime = video.get_bilibili_dtime()
         if dtime > 0:
-            import time
             abs_dtime = int(time.time()) + dtime
             data.delay_time(abs_dtime)
             logger.info(f"設定延遲發布，dtime={abs_dtime}")
