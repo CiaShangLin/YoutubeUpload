@@ -5,7 +5,12 @@
       "Bash(git add *)",
       "Bash(git mv *)",
       "Bash(venv/Scripts/python.exe *)",
-      "PowerShell(py *)"
-    ]
+      "PowerShell(py *)",
+      "WebSearch",
+      "Bash(pip install *)",
+      "Bash(py *)",
+      "Bash(python3 *)"
+    ],
+    "deny": ["Bash(rm -rf /)", "Bash(rm -rf *)"]
   }
 }
