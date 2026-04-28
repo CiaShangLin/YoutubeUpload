@@ -41,7 +41,7 @@ class TokenManager:
     GOOGLE_DRIVE_TOKEN_FILE = "google_drive_token.pickle"
     CLIENT_SECRETS_FILE = "token.json"
     BILIBILI_COOKIE_FILE = "bilibili_cookie.json"
-    BILIBILI_REQUIRED_FIELDS = ["SESSDATA", "bili_jct", "DedeUserID", "DedeUserID__ckMd5"]
+    BILIBILI_REQUIRED_FIELDS = ["SESSDATA", "bili_jct", "DedeUserID", "DedeUserID__ckMd5", "buvid3"]
     
     # OAuth Scopes
     YOUTUBE_SCOPES = [

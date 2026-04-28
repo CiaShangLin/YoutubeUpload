@@ -137,10 +137,9 @@ class BilibiliUploader(BaseUploader):
         with BiliBili(data) as bili:
             bili.login_by_cookies(cookie_payload)
 
-            # 5. 上傳影片檔案
+            # 5. 上傳影片檔案（依序嘗試不同 CDN，避免自動選到台灣連不到的節點）
             logger.info(f"開始上傳影片：{video.video_path}")
-            video_part = bili.upload_file(video.video_path)
-            # upload_file 回傳包含 filename 等資訊的 dict，需加入 Data
+            video_part = self._upload_file_with_fallback(bili, video.video_path)
             data.append(video_part)
 
             # 6. 上傳封面（如果有）
@@ -152,7 +151,12 @@ class BilibiliUploader(BaseUploader):
                 except Exception as e:
                     logger.warning(f"封面上傳失敗（繼續上傳影片）：{e}")
 
-            # 7. 提交投稿
+            # 7. 提交投稿（先印出 debug 資訊確認 payload 正確）
+            from dataclasses import asdict
+            submit_payload = asdict(data)
+            print(f"[DEBUG] bili_jct (CSRF): {bili._BiliBili__bili_jct!r}")
+            print(f"[DEBUG] session cookies: {dict(bili._BiliBili__session.cookies)}")
+            print(f"[DEBUG] submit payload: {submit_payload}")
             result = bili.submit()
 
         logger.info(f"B站投稿成功，回傳結果：{result}")
@@ -199,6 +203,25 @@ class BilibiliUploader(BaseUploader):
     # ------------------------------------------------------------------
     # 私有輔助方法
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _upload_file_with_fallback(bili, video_path: str) -> dict:
+        """
+        依序嘗試不同 CDN 節點上傳影片。
+        AUTO 可能選到台灣連不到的中國電信 CDN，所以先試幾個較穩定的節點。
+        """
+        # kodo/bda2/ws 相對較容易從中國境外連到
+        lines_order = ["kodo", "bda2", "ws", None]
+        last_err: Exception = Exception("未知錯誤")
+        for lines in lines_order:
+            tag = lines or "AUTO"
+            try:
+                logger.info(f"嘗試上傳 CDN lines={tag}")
+                return bili.upload_file(video_path, lines=lines)
+            except Exception as e:
+                logger.warning(f"CDN lines={tag} 失敗：{e}")
+                last_err = e
+        raise last_err
 
     @staticmethod
     def _extract_bvid(result: dict) -> str:

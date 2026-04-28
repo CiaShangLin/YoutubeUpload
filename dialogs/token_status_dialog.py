@@ -190,7 +190,9 @@ class TokenStatusDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(dialog)
 
         instruction = QtWidgets.QLabel(
-            "請貼上 B站 Cookie JSON（需包含 SESSDATA, bili_jct, DedeUserID, DedeUserID__ckMd5）："
+            "請貼上 B站 Cookie JSON。\n"
+            "必要欄位：SESSDATA, bili_jct, DedeUserID, DedeUserID__ckMd5, buvid3\n"
+            "（請從瀏覽器 Application > Cookies > bilibili.com 複製）"
         )
         instruction.setWordWrap(True)
         layout.addWidget(instruction)
@@ -201,7 +203,8 @@ class TokenStatusDialog(QtWidgets.QDialog):
             '  "SESSDATA": "your_sessdata",\n'
             '  "bili_jct": "your_bili_jct",\n'
             '  "DedeUserID": "your_uid",\n'
-            '  "DedeUserID__ckMd5": "your_ckmd5"\n'
+            '  "DedeUserID__ckMd5": "your_ckmd5",\n'
+            '  "buvid3": "your_buvid3"\n'
             '}'
         )
         layout.addWidget(text_edit)
