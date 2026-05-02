@@ -373,12 +373,11 @@ class YouTubeUploader(BaseUploader):
         Returns:
             str: 社群連結文字
         """
-        paypal = 'Paypal斗內連結 \nhttps://www.paypal.com/paypalme/Sc2Nzs906?country.x=TW&locale.x=zh_TW'
-        opay = '歐富寶斗內連結 \nhttps://payment.opay.tw/Broadcaster/Donate/F7149E2B175ACA220EAD8B99E1F69EB8'
+        paypal = 'Paypal斗內連結 \nhttps://streamlabs.com/sl_id_42a071db-50ed-308c-bf2c-4da779aa750e/home'
         facebook = 'Facebook_粉絲團 \nhttps://www.facebook.com/profile.php?id=61550685848292'
         instagram = 'Instagram粉絲團 \nhttps://www.instagram.com/sc2nzs906/'
         thread = 'Thread粉絲團 \nhttps://www.threads.com/@sc2nzs906?xmt=AQGzwQoSE8s-7o1yAmyIpw_aDv1pe5Rj7ew0QsQQJiFPq_I'
         youtube = '加入Nzs的頻道會員神族一起偉大 \nhttps://www.youtube.com/@Sc2Nzs906'
         end_message = '記得幫我按讚訂閱開啟小鈴鐺\n感謝大家~~'
-        
-        return f"{paypal}\n{opay}\n{facebook}\n{instagram}\n{thread}\n{youtube}\n{end_message}"
+
+        return f"{paypal}\n{facebook}\n{instagram}\n{thread}\n{youtube}\n{end_message}"
