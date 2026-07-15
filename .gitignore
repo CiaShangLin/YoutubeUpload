@@ -26,6 +26,7 @@ build/
 # Token files
 youtube_token.pickle
 google_drive_token.pickle
+bilibili_cookies.json
 
 # IDE
 .vscode/
