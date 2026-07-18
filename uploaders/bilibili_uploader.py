@@ -255,7 +255,7 @@ class BilibiliUploader(BaseUploader):
         replay_url: str,
     ) -> dict:
         title = video.title[:80]
-        desc = self._get_description(video, replay_url)[:2000]
+        desc = (video.description or self._get_description(video, replay_url))[:2000]
         dynamic = title[:233]
         tag = ",".join(self._get_tags(video)[:10])
 
