@@ -66,7 +66,16 @@ class VideoItem:
     
     # Replay 上傳後的 URL
     replay_url: Optional[str] = None
-    
+
+    # Bilibili 上傳狀態（與 YouTube 的 status 互相獨立）
+    bilibili_status: UploadStatus = UploadStatus.PENDING
+
+    # Bilibili 上傳後的影片 ID（bvid）
+    bilibili_video_id: Optional[str] = None
+
+    # Bilibili 錯誤訊息（如果上傳失敗）
+    bilibili_error_message: Optional[str] = None
+
     def __post_init__(self):
         """初始化後處理"""
         # 如果沒有設定發布時間，預設為當天 18:00
@@ -180,7 +189,10 @@ class VideoItem:
             'status': self.status.value,
             'video_id': self.video_id,
             'error_message': self.error_message,
-            'replay_url': self.replay_url
+            'replay_url': self.replay_url,
+            'bilibili_status': self.bilibili_status.value,
+            'bilibili_video_id': self.bilibili_video_id,
+            'bilibili_error_message': self.bilibili_error_message
         }
     
     @classmethod
@@ -215,6 +227,14 @@ class VideoItem:
             except ValueError:
                 pass
         
+        # 轉換 Bilibili 狀態
+        bilibili_status = UploadStatus.PENDING
+        if data.get('bilibili_status'):
+            try:
+                bilibili_status = UploadStatus(data['bilibili_status'])
+            except ValueError:
+                pass
+
         return cls(
             video_path=data['video_path'],
             title=data['title'],
@@ -229,5 +249,8 @@ class VideoItem:
             status=status,
             video_id=data.get('video_id'),
             error_message=data.get('error_message'),
-            replay_url=data.get('replay_url')
+            replay_url=data.get('replay_url'),
+            bilibili_status=bilibili_status,
+            bilibili_video_id=data.get('bilibili_video_id'),
+            bilibili_error_message=data.get('bilibili_error_message')
         )
