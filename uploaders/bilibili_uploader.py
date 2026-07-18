@@ -50,14 +50,7 @@ class BilibiliUploader(BaseUploader):
 
         self._ensure_auth()
 
-        replay_url = ""
-        if video.has_replay:
-            try:
-                print(f"Uploading replay to Google Drive: {video.replay_path}")
-                replay_url = google_drive.upload_replay(video.replay_path)
-                video.set_replay_url(replay_url)
-            except Exception as exc:
-                print(f"Replay upload failed, continuing without RP URL: {exc}")
+        replay_url = self._ensure_replay_uploaded(video)
 
         cover_url = ""
         if video.has_thumbnail:
@@ -83,6 +76,21 @@ class BilibiliUploader(BaseUploader):
 
         print(f"Bilibili upload completed: {bvid} (aid={aid})")
         return bvid
+
+    def _ensure_replay_uploaded(self, video: VideoItem) -> str:
+        """Reuse an already-uploaded replay URL, or upload it once."""
+        if not video.has_replay:
+            return ""
+        if video.replay_url:
+            return video.replay_url
+        try:
+            print(f"Uploading replay to Google Drive: {video.replay_path}")
+            replay_url = google_drive.upload_replay(video.replay_path)
+            video.set_replay_url(replay_url)
+            return replay_url
+        except Exception as exc:
+            print(f"Replay upload failed, continuing without RP URL: {exc}")
+            return ""
 
     def set_thumbnail(self, video_id: str, thumbnail_path: str) -> bool:
         """Bilibili cover is submitted with the archive payload."""
