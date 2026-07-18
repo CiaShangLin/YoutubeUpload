@@ -75,7 +75,8 @@ class YouTubeUploader(BaseUploader):
         # 2. 準備影片描述
         social_links = self._get_social_links()
         description = self._get_description(video.title, replay_url, social_links)
-        
+        video.description = description
+
         # 3. 取得 YouTube 憑證
         creds = self.token_manager.get_youtube_credentials()
         if not creds:
