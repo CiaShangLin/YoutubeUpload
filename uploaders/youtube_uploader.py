@@ -15,6 +15,7 @@ from uploaders.base_uploader import BaseUploader
 from video_item import VideoItem
 from token_manager import TokenManager
 from services import google_drive
+from description_assembler import assemble_description
 
 
 # 重試設定
@@ -75,6 +76,7 @@ class YouTubeUploader(BaseUploader):
         # 2. 準備影片描述
         social_links = self._get_social_links()
         description = self._get_description(video.title, replay_url, social_links)
+        description = assemble_description(description, video.en_description_summary)
         video.description = description
 
         # 3. 取得 YouTube 憑證
@@ -203,7 +205,7 @@ class YouTubeUploader(BaseUploader):
             print(f"❌ 加入播放清單失敗: {str(e)}")
             return False
     
-    def add_localizations(self, video_id: str, replay_url: str) -> bool:
+    def add_localizations(self, video_id: str, replay_url: str, zh_description_summary: str = "") -> bool:
         """
         添加多國語言字幕
         
@@ -248,7 +250,8 @@ class YouTubeUploader(BaseUploader):
             # 繁體中文
             zh_tw_title = self._translate_title(en_title, ENG_TO_TW)
             zh_tw_description = self._get_description(zh_tw_title, replay_url, social_links)
-            
+            zh_tw_description = assemble_description(zh_tw_description, zh_description_summary)
+
             # 日文
             ja_title = self._translate_title(en_title, ENG_TO_JA)
             ja_description = self._get_description(ja_title, replay_url, social_links)
