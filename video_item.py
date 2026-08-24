@@ -76,6 +76,15 @@ class VideoItem:
     # Bilibili 錯誤訊息（如果上傳失敗）
     bilibili_error_message: Optional[str] = None
 
+    # 字幕/雙語描述(由 Sc2Auto 的 describing stage 產出,寫進 manifest)
+    srt_path: Optional[str] = None
+    zh_description_summary: Optional[str] = None
+    en_description_summary: Optional[str] = None
+
+    # CC 字幕上傳狀態
+    caption_uploaded: bool = False
+    caption_error_message: Optional[str] = None
+
     def __post_init__(self):
         """初始化後處理"""
         # 如果沒有設定發布時間，預設為當天 18:00
@@ -192,7 +201,12 @@ class VideoItem:
             'replay_url': self.replay_url,
             'bilibili_status': self.bilibili_status.value,
             'bilibili_video_id': self.bilibili_video_id,
-            'bilibili_error_message': self.bilibili_error_message
+            'bilibili_error_message': self.bilibili_error_message,
+            'srt_path': self.srt_path,
+            'zh_description_summary': self.zh_description_summary,
+            'en_description_summary': self.en_description_summary,
+            'caption_uploaded': self.caption_uploaded,
+            'caption_error_message': self.caption_error_message,
         }
     
     @classmethod
@@ -252,5 +266,10 @@ class VideoItem:
             replay_url=data.get('replay_url'),
             bilibili_status=bilibili_status,
             bilibili_video_id=data.get('bilibili_video_id'),
-            bilibili_error_message=data.get('bilibili_error_message')
+            bilibili_error_message=data.get('bilibili_error_message'),
+            srt_path=data.get('srt_path'),
+            zh_description_summary=data.get('zh_description_summary'),
+            en_description_summary=data.get('en_description_summary'),
+            caption_uploaded=data.get('caption_uploaded', False),
+            caption_error_message=data.get('caption_error_message'),
         )
