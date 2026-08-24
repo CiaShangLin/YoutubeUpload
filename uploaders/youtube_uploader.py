@@ -212,7 +212,8 @@ class YouTubeUploader(BaseUploader):
         Args:
             video_id: YouTube 影片 ID
             replay_url: Replay 檔案 URL
-            
+            zh_description_summary: 要接在 zh-TW 描述尾端的雙語簡介文字(zh 那一份),空字串則不接
+
         Returns:
             bool: 是否成功
         """
@@ -220,11 +221,11 @@ class YouTubeUploader(BaseUploader):
             creds = self.token_manager.get_youtube_credentials()
             if not creds:
                 return False
-            
+
             youtube = googleapiclient.discovery.build(
                 "youtube", "v3", credentials=creds
             )
-            
+
             # 取得影片資訊
             video_response = youtube.videos().list(
                 part="snippet,localizations",
