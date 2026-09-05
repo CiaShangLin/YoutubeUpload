@@ -1,5 +1,6 @@
 from __future__ import print_function
 import pickle
+import os
 import os.path
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -14,9 +15,10 @@ replay_folder_id = '1ZJLoKqzxymZ9XUyYeOWmvZkeEwxTti-x'
 
 
 def cut_string(input_string):
-    index = input_string.find("【StarCraft II】")
-    if index != -1:
-        return input_string[index:]
+    for marker in ("【星海爭霸2】", "【StarCraft II】"):
+        index = input_string.find(marker)
+        if index != -1:
+            return input_string[index:]
     return input_string
 
 def upload_replay(filePath):
@@ -39,7 +41,7 @@ def upload_replay(filePath):
 
     service = build('drive', 'v3', credentials=creds)
 
-    file_metadata = {'name': cut_string(filePath), 'parents': [replay_folder_id]}
+    file_metadata = {'name': cut_string(os.path.basename(filePath)), 'parents': [replay_folder_id]}
     media = MediaFileUpload(filePath, resumable=True)
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
     print('File ID: %s' % file.get('id'))
